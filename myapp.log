@@ -1,0 +1,215 @@
+INFO:werkzeug: * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:7000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 15:39:38] "[33mGET / HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 15:39:38] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 15:39:42] "[31m[1mGET /login HTTP/1.1[0m" 405 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 15:40:15] "[35m[1mPOST /login HTTP/1.1[0m" 505 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:07:53] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:07:57] "[31m[1mPOST /login HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:08:01] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:08:02] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:09:38] "[33mGET /logged_user HTTP/1.1[0m" 404 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:10:05] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:11:05] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:11:10] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+ERROR:app:Exception on /logged_user [GET]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 51, in logged_user
+    current_user = get_jwt_identity()
+NameError: name 'get_jwt_identity' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:11:49] "[35m[1mGET /logged_user HTTP/1.1[0m" 500 -
+ERROR:app:Exception on /logged_user [GET]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 51, in logged_user
+    current_user = get_jwt_identity()
+NameError: name 'get_jwt_identity' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:12:41] "[35m[1mGET /logged_user HTTP/1.1[0m" 500 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:12:54] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:13:10] "[31m[1mGET /logged_user HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:13:21] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+ERROR:app:Exception on /logged_user [GET]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 51, in logged_user
+    current_user = get_jwt_identity()
+NameError: name 'get_jwt_identity' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:13:59] "[35m[1mGET /logged_user HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+ERROR:app:Exception on /logged_user [GET]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 51, in logged_user
+    current_user = get_jwt_identity()
+NameError: name 'get_jwt_identity' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:15:05] "[35m[1mGET /logged_user HTTP/1.1[0m" 500 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:17:01] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+ERROR:app:Exception on /logged_user [GET]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 51, in logged_user
+    current_user = get_jwt_identity()
+NameError: name 'get_jwt_identity' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:17:22] "[35m[1mGET /logged_user HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+ERROR:app:Exception on /logged_user [GET]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1519, in full_dispatch_request
+    return self.finalize_request(rv)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1538, in finalize_request
+    response = self.make_response(rv)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1702, in make_response
+    f"The view function for {request.endpoint!r} did not"
+TypeError: The view function for 'logged_user' did not return a valid response. The function either returned None or ended without a return statement.
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:17:58] "[35m[1mGET /logged_user HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:18:29] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:18:35] "[31m[1mGET /logged_user HTTP/1.1[0m" 422 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:18:40] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:22:43] "[35m[1mPOST /login HTTP/1.1[0m" 505 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:23:08] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:23:20] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:23:21] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:24:37] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:24:40] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:24:50] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:24:52] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:25:18] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:25:27] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:29:21] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:31:44] "[31m[1mGET /refresh HTTP/1.1[0m" 405 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:32:05] "[31m[1mPOST /refresh HTTP/1.1[0m" 401 -
+ERROR:app:Exception on /refresh [POST]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 57, in refresh
+    access_token = create_access_token(identity=identity, fresh=False)
+NameError: name 'create_access_token' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:32:16] "[35m[1mPOST /refresh HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:32:38] "POST /refresh HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:32:45] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:32:48] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:40:07] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:40:18] "GET /logged_user HTTP/1.1" 200 -
+ERROR:app:Exception on /logout [DELETE]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask_jwt_extended/view_decorators.py", line 154, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "/home/marshall/git_repos/_api_/marshall-api/app.py", line 87, in logout
+    token = get_jwt()
+NameError: name 'get_jwt' is not defined
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:40:41] "[35m[1mDELETE /logout HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:41:21] "[31m[1mDELETE /logout HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:41:27] "POST /login HTTP/1.1" 200 -
+ERROR:app:Exception on /logout [DELETE]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1519, in full_dispatch_request
+    return self.finalize_request(rv)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1538, in finalize_request
+    response = self.make_response(rv)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1702, in make_response
+    f"The view function for {request.endpoint!r} did not"
+TypeError: The view function for 'logout' did not return a valid response. The function either returned None or ended without a return statement.
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:41:38] "[35m[1mDELETE /logout HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+ERROR:app:Exception on /logout [DELETE]
+Traceback (most recent call last):
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1519, in full_dispatch_request
+    return self.finalize_request(rv)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1538, in finalize_request
+    response = self.make_response(rv)
+  File "/home/marshall/Anaconda3-2023.09-0-Linux-x86_64/envs/marshall-api/lib/python3.6/site-packages/flask/app.py", line 1702, in make_response
+    f"The view function for {request.endpoint!r} did not"
+TypeError: The view function for 'logout' did not return a valid response. The function either returned None or ended without a return statement.
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:41:51] "[35m[1mDELETE /logout HTTP/1.1[0m" 500 -
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:42:35] "POST /login HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:42:43] "DELETE /logout HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:42:54] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:42:55] "[31m[1mGET /logged_user HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:43:10] "POST /refresh HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:43:19] "GET /logged_user HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:43:36] "DELETE /logout HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:43:42] "[31m[1mPOST /refresh HTTP/1.1[0m" 401 -
+INFO:werkzeug:127.0.0.1 - - [12/Aug/2025 16:43:43] "[31m[1mPOST /refresh HTTP/1.1[0m" 401 -
