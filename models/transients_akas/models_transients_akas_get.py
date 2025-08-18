@@ -103,10 +103,10 @@ class models_transients_akas_get(base_model):
             rows = []
 
         if not self.qs["format"] or self.qs["format"] in ("html_table", "html_tickets"):
-            objectAkas = []
-            objectAkas[:] = [dict(list(zip(list(row.keys()), row)))
-                             for row in rows]
-            responseContent = objectAkas
+            #objectAkas = []
+            #objectAkas[:] = [dict(list(zip(list(row.keys()), row)))
+            #                 for row in rows]
+            responseContent = rows
 
         else:
             responseContent = self.convert_to_nested_data_structure(

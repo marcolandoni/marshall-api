@@ -107,11 +107,21 @@ def getTransients():
     print(dict(request.json))
     print('data1' in dict(request.json))
     model = models_transients_get(log, request.json, db=dbConn, search=True)
-    qs, data, akas = model.get()
+    qs, transientData, transientAkas, transientLightcurveData, transientAtelMatches, transients_comments, totalTicketCount, transient_history, transient_crossmatches, skyTags = model.get()
     response ={
-      "transientData": data,
-      "akas": akas
+      "qs": qs,
+      "transientData": transientData,
+      "akas": transientAkas,
+      "lc_data": transientLightcurveData,
+      "ts_atel_matches": transientAtelMatches,
+      "comments": transients_comments,
+      "totalTicketCount": totalTicketCount,
+      "transient_history": transient_history,
+      "ts_xmatches": transient_crossmatches,
+      "ts_skytag": skyTags
+
     }
+    print("returning ", str(len(transientData)))
     return jsonify(response), 200
   except Exception as e:
     print(e)

@@ -19,6 +19,7 @@ from builtins import zip
 from future import standard_library
 from fundamentals.mysql import database, readquery
 from models.transients_akas.models_transients_akas_get import models_transients_akas_get
+from models.transients_lightcurves.transients_lightcurves_get import models_transients_lightcurves_get
 standard_library.install_aliases()
 
 
@@ -76,12 +77,12 @@ class models_transients_get(base_model):
         self.log.debug('starting the ``get`` method')
 
         self.transientAkas = self._get_associated_transient_aka()
-        #self.transientLightcurveData = self._get_associated_lightcurve_data()
-        #self.transientAtelMatches = self._get_associated_atel_data()
-        #self.transients_comments = self._get_associated_comments()
-        #self.transient_history = self._get_associated_transient_history()
-        #self.transient_crossmatches = self._get_associated_transient_crossmatches()
-        #self.skyTags = self._get_associated_multimessenger_associations()
+        self.transientLightcurveData = self._get_associated_lightcurve_data()
+        self.transientAtelMatches = self._get_associated_atel_data()
+        self.transients_comments = self._get_associated_comments()
+        self.transient_history = self._get_associated_transient_history()
+        self.transient_crossmatches = self._get_associated_transient_crossmatches()
+        self.skyTags = self._get_associated_multimessenger_associations()
 
         self.log.debug('completed the ``get`` method')
 
@@ -91,8 +92,8 @@ class models_transients_get(base_model):
 
         qs = self.qs
         self.log.debug("""self.qs: `%(qs)s`""" % locals())
-        return  self.qs, self.transientData, self.transientAkas
-        #return self.qs, self.transientData, self.transientAkas, self.transientLightcurveData, self.transientAtelMatches, self.transients_comments, self.totalTicketCount, self.transient_history, self.transient_crossmatches, self.skyTags
+        #return  self.qs, self.transientData, self.transientAkas
+        return self.qs, self.transientData, self.transientAkas, self.transientLightcurveData, self.transientAtelMatches, self.transients_comments, self.totalTicketCount, self.transient_history, self.transient_crossmatches, self.skyTags
 
     def _get_transient_data_from_database(
             self):
@@ -284,6 +285,7 @@ class models_transients_get(base_model):
                 sqlQuery = """
                     select t.transientBucketId from transientBucketSummaries t, pesstoObjects p %(tcsCm)s %(queryWhere)s %(tep)s %(tec)s  order by case when t.%(sortBy)s is null then 1 else 0 end,  t.%(sortBy)s %(sortDirection)s
                 """ % locals()
+                print(sqlQuery)
         else:
             sqlQuery = """
                 select t.transientBucketId from transientBucket t, pesstoObjects p %(tcsCm)s %(queryWhere)s and replacedByRowId =0  %(tep)s %(tec)s
@@ -314,7 +316,8 @@ class models_transients_get(base_model):
         tables = {"transientBucketSummaries": "s",
                   "transientBucket": "t",
                   "pesstoObjects": "p",
-                  "sherlock_classifications": "sc"}
+                  "sherlock_classifications": "sc",
+                  "scheduler_obs": "obs"}
 
         thisSchema = "marshall"
         for k, v in list(tables.items()):
@@ -338,7 +341,7 @@ class models_transients_get(base_model):
 
         # grab the remaining data assocatied with the transientBucketIds
         sqlQuery = """
-            select %(selectColumns)s from transientBucket t, transientBucketSummaries s, pesstoObjects p, sherlock_classifications sc where t.replacedByRowId = 0 and t.transientBucketId in (%(matchedTransientBucketIds)s) and t.masterIdFlag = 1 and t.transientBucketId = p.transientBucketId and p.transientBucketId=s.transientBucketId and t.transientBucketId = sc.transient_object_id order by FIELD(t.transientBucketId, %(matchedTransientBucketIds)s)
+            select %(selectColumns)s from transientBucket t, transientBucketSummaries s, pesstoObjects p, sherlock_classifications sc, scheduler_obs obs where t.replacedByRowId = 0 and t.transientBucketId in (%(matchedTransientBucketIds)s) and t.masterIdFlag = 1 and t.transientBucketId = p.transientBucketId and p.transientBucketId=s.transientBucketId and t.transientBucketId = sc.transient_object_id and t.transientBucketId=obs.transientBucketId order by FIELD(t.transientBucketId, %(matchedTransientBucketIds)s)
         """ % locals()
         tmpObjectData = readquery(sqlQuery, self.dbConn, self.log)
 
@@ -358,6 +361,7 @@ class models_transients_get(base_model):
 
         self.log.debug('completed the ``get_data_from_database`` method')
         return objectData, matchedTransientBucketIds, totalTicketCount
+
 
     def _set_default_parameters(
             self):
@@ -458,6 +462,7 @@ class models_transients_get(base_model):
         self.log.debug('completed the ``set_default_parameters`` method')
         return None
 
+
     def _get_associated_transient_aka(
             self):
         """
@@ -501,13 +506,13 @@ class models_transients_get(base_model):
             select transientBucketId, magnitude, filter, survey, surveyObjectUrl, observationDate from transientBucket where replacedByRowId = 0 and transientBucketId in (%(matchedTransientBucketIds)s) and observationDate is not null and observationDate != 0000-00-00 and magnitude is not null and magnitude < 50 and limitingMag = 0 order by observationDate desc;
         """ % locals()
         lightCurveDataTmp = readquery(sqlQuery, self.dbConn, self.log)
-        lightCurveData = []
-        lightCurveData[:] = [dict(list(zip(list(row.keys()), row)))
-                             for row in lightCurveDataTmp]
+        #lightCurveData = []
+        #lightCurveData[:] = [dict(list(zip(list(row.keys()), row)))
+        #                     for row in lightCurveDataTmp]
 
         self.log.debug(
             'completed the ``_get_associated_lightcurve_data`` method')
-        return lightCurveData
+        return lightCurveDataTmp
 
     def _get_associated_atel_data(
             self):
@@ -577,12 +582,9 @@ class models_transients_get(base_model):
             select * from pesstoObjectsComments where pesstoObjectsID in (%(matchedTransientBucketIds)s) order by dateCreated desc
         """ % locals()
         objectCommentsTmp = readquery(sqlQuery, self.dbConn, self.log)
-        objectComments = []
-        objectComments[:] = [dict(list(zip(list(row.keys()), row)))
-                             for row in objectCommentsTmp]
 
         self.log.debug('completed the ``_get_associated_comments`` method')
-        return objectComments
+        return objectCommentsTmp
 
     def _get_total_ticket_count_for_list(
             self,
