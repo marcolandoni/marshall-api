@@ -14,7 +14,7 @@ import redis
 from models.transients.models_transients_get import models_transients_get
 import traceback
 
-logging.basicConfig(filename='myapp.log', level=logging.INFO)
+logging.basicConfig(filename='/home/marshall/.config/marshall_api/marshall_api.log', level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
