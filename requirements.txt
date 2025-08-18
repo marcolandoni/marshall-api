@@ -4,3 +4,4 @@ passlib
 fundamentals
 pymysql
 redis
+astrocalc

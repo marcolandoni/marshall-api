@@ -11,8 +11,8 @@ from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity, create_access_token, get_jwt
 from datetime import timedelta
 import redis
-
-
+from models.transients.models_transients_get import models_transients_get
+import traceback
 
 logging.basicConfig(filename='myapp.log', level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -65,9 +65,12 @@ def login():
 @app.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
+  try:
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity, fresh=False)
     return jsonify(access_token=access_token)
+  except:
+    return jsonify({"msg": "Internal Server Error"}), 505
 
 
 @app.route("/logged_user", methods=["GET"])
@@ -94,7 +97,21 @@ def logout():
       # Returns "Access token revoked" or "Refresh token revoked"
       return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
   except Exception as e:
+    return jsonify({"msg": "Internal Server Error"}), 505
     print(e)
 
+@app.route("/getTransients", methods=["GET"])
+def getTransients():
+  try:
+    print(request.json)
+    print(dict(request.json))
+    print('data1' in dict(request.json))
+    model = models_transients_get(log, request.json, db=dbConn, search=True)
+    qs, data = model.get()
+    return jsonify(data), 200
+  except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+
 if __name__ == "__main__":  
-    app.run()
+    app.run(port=8000)
