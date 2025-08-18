@@ -18,6 +18,7 @@ from builtins import object
 from builtins import zip
 from future import standard_library
 from fundamentals.mysql import database, readquery
+from models.transients_akas.models_transients_akas_get import models_transients_akas_get
 standard_library.install_aliases()
 
 
@@ -74,7 +75,7 @@ class models_transients_get(base_model):
         """
         self.log.debug('starting the ``get`` method')
 
-        #self.transientAkas = self._get_associated_transient_aka()
+        self.transientAkas = self._get_associated_transient_aka()
         #self.transientLightcurveData = self._get_associated_lightcurve_data()
         #self.transientAtelMatches = self._get_associated_atel_data()
         #self.transients_comments = self._get_associated_comments()
@@ -90,7 +91,7 @@ class models_transients_get(base_model):
 
         qs = self.qs
         self.log.debug("""self.qs: `%(qs)s`""" % locals())
-        return  self.qs, self.transientData
+        return  self.qs, self.transientData, self.transientAkas
         #return self.qs, self.transientData, self.transientAkas, self.transientLightcurveData, self.transientAtelMatches, self.transients_comments, self.totalTicketCount, self.transient_history, self.transient_crossmatches, self.skyTags
 
     def _get_transient_data_from_database(
@@ -468,11 +469,12 @@ class models_transients_get(base_model):
 
         """
         self.log.debug('starting the ``_get_associated_transient_aka`` method')
-        from marshall_webapp.models.transients_akas import models_transients_akas_get
+        #from marshall_webapp.models.transients_akas import models_transients_akas_get
         transients_akas = models_transients_akas_get(
             log=self.log,
             request=self.request,
-            elementId=self.matchedTransientBucketIds
+            elementId=self.matchedTransientBucketIds,
+            db = self.dbConn
         )
         akas = transients_akas.get()
 
