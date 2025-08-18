@@ -940,3 +940,5 @@ INFO:werkzeug:127.0.0.1 - - [18/Aug/2025 15:30:13] "GET /getTransients HTTP/1.1"
 INFO:werkzeug:127.0.0.1 - - [18/Aug/2025 15:30:32] "GET /getTransients HTTP/1.1" 200 -
 INFO:werkzeug:127.0.0.1 - - [18/Aug/2025 15:39:24] "GET /getTransients HTTP/1.1" 200 -
 INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
+INFO:werkzeug: * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
