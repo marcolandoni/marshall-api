@@ -54,7 +54,6 @@ class models_transients_lightcurves_get(base_model):
         self.log.debug('starting the ``get`` method')
 
         transientBucketId = self.elementId
-
         # GRAB THE LIGHTCURVE DATA FOR THE OBJECT
         sqlQuery = """
             select observationMJD, observationDate, magnitude, magnitudeError, limitingMag, filter, survey from transientBucket where replacedByRowId = 0 and transientBucketId = %(transientBucketId)s and observationDate is not null and observationDate != 0000-00-00 and magnitude is not null and magnitude < 50 and survey != "bright sn list" order by observationDate asc;
