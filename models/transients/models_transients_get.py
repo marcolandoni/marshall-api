@@ -3,6 +3,8 @@
 
 :Author:
     David Young
+: Modified by:
+    Marco Landoni for Flask porting
 """
 import re
 from models import base_model
@@ -531,10 +533,7 @@ class models_transients_get(base_model):
         sqlQuery = """
             select distinct transientBucketId, name, surveyObjectUrl from transientBucket where replacedByRowId = 0 and transientBucketId in (%(matchedTransientBucketIds)s) and name like "%%atel_%%"
         """ % locals()
-        transientAtelMatchesTmp = readquery(sqlQuery, self.dbConn, self.log)
-        transientAtelMatches = []
-        transientAtelMatches[:] = [
-            dict(list(zip(list(row.keys()), row))) for row in transientAtelMatchesTmp]
+        transientAtelMatches = readquery(sqlQuery, self.dbConn, self.log)
 
         self.log.debug('completed the ``_get_associated_atel_data`` method')
         return transientAtelMatches
@@ -556,10 +555,7 @@ class models_transients_get(base_model):
         sqlQuery = """
             SELECT * FROM lvk_skytag s, lvk_alerts a, lvk_events e where s.mapId=a.primaryId and e.superevent_id=a.superevent_id and a.alert_time =e.alert_time and transientBucketId in  (%(matchedTransientBucketIds)s)
         """ % locals()
-        skyTagsTmp = readquery(sqlQuery, self.dbConn, self.log)
-        skyTags = []
-        skyTags[:] = [
-            dict(list(zip(list(row.keys()), row))) for row in skyTagsTmp]
+        skyTags = readquery(sqlQuery, self.dbConn, self.log)
 
         self.log.debug('completed the ``_get_associated_multimessenger_associations`` method')
         return skyTags
@@ -807,10 +803,8 @@ class models_transients_get(base_model):
             select * from transients_history_logs where transientBucketId in (%(matchedTransientBucketIds)s) order by dateCreated desc
         """ % locals()
 
-        objectHistoryTmp = readquery(sqlQuery, self.dbConn, self.log)
-        objectHistory = []
-        objectHistory[:] = [dict(list(zip(list(row.keys()), row)))
-                            for row in objectHistoryTmp]
+        objectHistory = readquery(sqlQuery, self.dbConn, self.log)
+
 
         from operator import itemgetter
         objectHistory = list(objectHistory)
@@ -841,10 +835,7 @@ class models_transients_get(base_model):
             select *, t.raDeg, t.decDeg from sherlock_crossmatches t, transientBucket b where b.replacedByRowId = 0 and b.transientBucketId in (%(matchedTransientBucketIds)s) and b.transientBucketId = t.transient_object_id  and b.masterIDFlag = 1 and rank is not null order by rank
         """ % locals()
 
-        crossmatchesTmp = readquery(sqlQuery, self.dbConn, self.log)
-        crossmatches = []
-        crossmatches[:] = [dict(list(zip(list(row.keys()), row)))
-                           for row in crossmatchesTmp]
+        crossmatches = readquery(sqlQuery, self.dbConn, self.log)
 
         from operator import itemgetter
         crossmatches = list(crossmatches)

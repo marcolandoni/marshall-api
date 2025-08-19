@@ -5,6 +5,8 @@
 
 :Author:
     David Young
+: Modified by:
+    Marco Landoni for Flask porting
 """
 from builtins import str
 from builtins import zip
