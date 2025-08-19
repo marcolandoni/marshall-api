@@ -12,6 +12,7 @@ from flask_jwt_extended import get_jwt_identity, create_access_token, get_jwt
 from datetime import timedelta
 import redis
 from models.transients.models_transients_get import models_transients_get
+from models.transients.models_transients_put import models_transients_element_put
 import traceback
 
 logging.basicConfig(filename='/home/marshall/.config/marshall_api/marshall_api.log', level=logging.INFO)
@@ -33,7 +34,7 @@ dbConn = database(
 app = Flask(__name__)
 ACCESS_EXPIRES = timedelta(hours=24)
 app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this!
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 
@@ -100,7 +101,10 @@ def logout():
     return jsonify({"msg": "Internal Server Error"}), 505
     print(e)
 
+# GENERIC APP ROUTE FOR GETTING TRANSIENTS DATA
+
 @app.route("/getTransients", methods=["GET"])
+@jwt_required()
 def getTransients():
   try:
     print(request.json)
@@ -126,6 +130,25 @@ def getTransients():
   except Exception as e:
     print(e)
     print(traceback.format_exc())
+    return jsonify({"msg": "Internal Server Error"}), 505
+
+
+# GENERIC APP ROUTE FOR PATCHING TRANSIENTS DATA (POSSIBLY CLASSIFICATION WILL GO UNDER THIS ROUTE)
+@app.route("/patchTransient", methods=["PATCH"])
+@jwt_required()
+def patchTransient():
+  try:
+    request_json = request.json
+    #adding the auth user to the request.
+    request_json["authenticated_userid"] = get_jwt_identity()
+    model = models_transients_element_put(log, request.json, dbConn)
+    response = model.put()
+    return jsonify({"msg": response}), 200
+  except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+    return jsonify({"msg": "Internal Server Error. Please check the format of your request."}), 505
+
 
 if __name__ == "__main__":  
     app.run(port=8000)
