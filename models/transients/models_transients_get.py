@@ -88,10 +88,6 @@ class models_transients_get(base_model):
 
         self.log.debug('completed the ``get`` method')
 
-        if "format" in self.qs and (self.qs["format"] == "json" or self.qs["format"] == "csv" or self.qs["format"] == "plain_table"):
-            self._clean_data_for_plain_text_outputs()
-            return self.transientData
-
         qs = self.qs
         self.log.debug("""self.qs: `%(qs)s`""" % locals())
         #return  self.qs, self.transientData, self.transientAkas
@@ -606,10 +602,7 @@ class models_transients_get(base_model):
             sqlQuery = """
                 select count(*) from pesstoObjects p, transientBucketSummaries t %(queryWhere)s and t.transientBucketId = p.transientBucketId;
             """ % locals()
-            totalTicketsTmp = readquery(sqlQuery, self.dbConn, self.log)
-            totalTickets = []
-            totalTickets[:] = [dict(list(zip(list(row.keys()), row)))
-                               for row in totalTicketsTmp]
+            totalTickets = readquery(sqlQuery, self.dbConn, self.log)
             totalTickets = totalTickets[0]["count(*)"]
         elif self.elementId:
             totalTickets = 1
@@ -622,10 +615,7 @@ class models_transients_get(base_model):
                 sqlQuery = """
                     select all_transient_associations as count from tcs_stats_catalogues where table_id = %(tcsCatalogueId)s;
                 """ % locals()
-            ticketCountRowsTmp = readquery(sqlQuery, self.dbConn, self.log)
-            ticketCountRows = []
-            ticketCountRows[:] = [dict(list(zip(list(row.keys()), row)))
-                                  for row in ticketCountRowsTmp]
+            ticketCountRows = readquery(sqlQuery, self.dbConn, self.log)
             totalTickets = 0
             for row in ticketCountRows:
                 totalTickets += row["count"]
@@ -640,10 +630,8 @@ class models_transients_get(base_model):
                     select count(*) as count from transientBucketSummaries t, pesstoObjects p %(queryWhere)s %(tep)s
                 """ % locals()
 
-            ticketCountRowsTmp = readquery(sqlQuery, self.dbConn, self.log)
-            ticketCountRows = []
-            #ticketCountRows[:] = [dict(list(zip(list(row.keys()), row)))
-            #                      for row in ticketCountRowsTmp]
+            ticketCountRows = readquery(sqlQuery, self.dbConn, self.log)
+
             totalTickets = 0
             for row in ticketCountRows:
                 print(row)
@@ -653,10 +641,7 @@ class models_transients_get(base_model):
             sqlQuery = """
                     select count(*) as count FROM phase_iii_transient_catalogue_ssdr3 p, sherlock_classifications s where s.transient_object_id=p.TransientBucketId and s.matchVerified is null
             """ % locals()
-            ticketCountRowsTmp = readquery(sqlQuery, self.dbConn, self.log)
-            ticketCountRows = []
-            ticketCountRows[:] = [dict(list(zip(list(row.keys()), row)))
-                                  for row in ticketCountRowsTmp]
+            ticketCountRows = readquery(sqlQuery, self.dbConn, self.log)
             totalTickets = 0
             for row in ticketCountRows:
                 totalTickets += row["count"]
@@ -666,10 +651,7 @@ class models_transients_get(base_model):
             sqlQuery = """
                 select count from meta_workflow_lists_counts %(ticketCountWhere)s;
             """ % locals()
-            ticketCountRowsTmp = readquery(sqlQuery, self.dbConn, self.log)
-            ticketCountRows = []
-            ticketCountRows[:] = [dict(list(zip(list(row.keys()), row)))
-                                  for row in ticketCountRowsTmp]
+            ticketCountRows = readquery(sqlQuery, self.dbConn, self.log)
             totalTickets = 0
             for row in ticketCountRows:
                 totalTickets += row["count"]
@@ -677,117 +659,6 @@ class models_transients_get(base_model):
         self.log.debug(
             'completed the ``_get_total_ticket_count_for_list`` method')
         return totalTickets
-
-    def _clean_data_for_plain_text_outputs(
-            self):
-        """
-        *clean data for plain text outputs*
-
-        **Return**
-
-        - None
-
-        """
-        self.log.debug(
-            'completed the ````_clean_data_for_plain_text_outputs`` method')
-
-        # ASTROCALC UNIT CONVERTER OBJECT
-        converter = unit_conversion(
-            log=self.log
-        )
-
-        # assoicate the correct column name to mysql database column name
-        tmpDict = {}
-        tableColumnNames = collections.OrderedDict(
-            sorted(tmpDict.items()))
-        tableColumnNames["masterName"] = "name"
-        tableColumnNames["observationPriority"] = "priority"
-        tableColumnNames["raDeg"] = "ra"
-        tableColumnNames["decDeg"] = "dec"
-        tableColumnNames["recentClassification"] = "spectral class"
-        tableColumnNames["classificationPhase"] = "classification phase"
-        tableColumnNames["classificationWRTMax"] = "classificationWRTMax"
-        tableColumnNames["classificationDate"] = "classification date"
-        tableColumnNames["currentMagnitude"] = "latest mag"
-        tableColumnNames["absolutePeakMagnitude"] = "abs peak mag"
-        tableColumnNames["best_redshift"] = "z"
-        tableColumnNames["distanceMpc"] = "mpc"
-        tableColumnNames["earliestDetection"] = "discovery date"
-        tableColumnNames["lastNonDetectionDate"] = "last non-detection date"
-        tableColumnNames["dateAdded"] = "added to marshall"
-        tableColumnNames["pi_name"] = "PI"
-        tableColumnNames["pi_email"] = "pi email"
-        if "format" in self.qs and (self.qs["format"].lower() == "json"):
-            tableColumnNames["akas"] = "akas"
-
-        # a list of names for table and csv views
-        tableColumns = [
-            "masterName",
-            "observationPriority",
-            "raDeg",
-            "decDeg",
-            "recentClassification",
-            "classificationPhase",
-            "classificationWRTMax",
-            "classificationDate",
-            "currentMagnitude",
-            "absolutePeakMagnitude",
-            "best_redshift",
-            "distanceMpc",
-            "earliestDetection",
-            "lastNonDetectionDate",
-            "dateAdded",
-            "pi_name"
-        ]
-
-        # convert priorities to words
-        for obj in self.transientData:
-
-            for item in self.transientAkas:
-                if item["transientBucketId"] == obj["transientBucketId"]:
-                    obj["masterName"] = item["akas"][0]['name']
-                    obj["akas"] = item["akas"]
-                    break
-
-            if "marshallWorkflowLocation" in obj:
-                if obj["marshallWorkflowLocation"] == "following":
-                    for n, w, c in zip([1, 2, 3, 4], ["CRITICAL", "IMPORTANT", "USEFUL", "NONE"], ["green", "yellow", "red", "blue"]):
-                        if obj["observationPriority"] == n:
-                            obj["observationPriority"] = w
-                            break
-                elif obj["marshallWorkflowLocation"] == "pending observation":
-                    for n, w, c in zip([1, 2, 3], ["HIGH", "MEDIUM", "LOW"], ["green", "yellow", "red"]):
-                        if obj["observationPriority"] == n:
-                            obj["observationPriority"] = w
-                            break
-
-        newTransientData = []
-        for oldRow in self.transientData:
-            tmpRow = {}
-            newRow = collections.OrderedDict(sorted(tmpRow.items()))
-
-            for oldName, newName in list(tableColumnNames.items()):
-
-                newRow[newName] = oldRow[oldName]
-                if "decdeg" in oldName.lower():
-
-                    raSex = converter.ra_decimal_to_sexegesimal(
-                        ra=float(oldRow["raDeg"]),
-                        delimiter=":"
-                    )
-                    newRow["ra (sex)"] = raSex
-                    decSex = converter.dec_decimal_to_sexegesimal(
-                        dec=float(oldRow["decDeg"]),
-                        delimiter=":"
-                    )
-                    newRow["dec (sex)"] = decSex
-            newTransientData.append(newRow)
-
-        self.transientData = newTransientData
-
-        self.log.debug(
-            'completed the ``_clean_data_for_plain_text_outputs`` method')
-        return None
 
     def _get_associated_transient_history(
             self):
