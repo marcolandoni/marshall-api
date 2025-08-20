@@ -1,6 +1,7 @@
 import logging
 
 from fundamentals.mysql import database, readquery
+
 from packages.login import login_user
 
 from flask import Flask
@@ -9,10 +10,15 @@ from flask import request
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity, create_access_token, get_jwt
+
 from datetime import timedelta
+
 import redis
+
 from models.transients.models_transients_get import models_transients_get
 from models.transients.models_transients_put import models_transients_element_put
+from models.transients_comments.models_transients_comments import models_transients_comments_put 
+
 import traceback
 
 logging.basicConfig(filename='/home/marshall/.config/marshall_api/marshall_api.log', level=logging.INFO)
@@ -149,6 +155,20 @@ def patchTransient():
     print(traceback.format_exc())
     return jsonify({"msg": "Internal Server Error. Please check the format of your request."}), 505
 
+@app.route("/putComment", methods=["PUT"])
+@jwt_required()
+def putComment():
+  try:
+    request_json = request.json
+    #adding the auth user to the request.
+    request_json["authenticated_userid"] = get_jwt_identity()
+    model = models_transients_comments_put(log, request.json, dbConn)
+    response = model.put()
+    return jsonify({"msg": response}), 200
+  except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+    return jsonify({"msg": "Internal Server Error. Please check the format of your request."}), 505
 
 if __name__ == "__main__":  
     app.run(port=8000)

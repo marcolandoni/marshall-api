@@ -58,9 +58,7 @@ class models_transients_lightcurves_get(base_model):
         sqlQuery = """
             select observationMJD, observationDate, magnitude, magnitudeError, limitingMag, filter, survey from transientBucket where replacedByRowId = 0 and transientBucketId = %(transientBucketId)s and observationDate is not null and observationDate != 0000-00-00 and magnitude is not null and magnitude < 50 and survey != "bright sn list" order by observationDate asc;
         """ % locals()
-        lightCurveTmp = readquery(sqlQuery, self.dbConn, self.log)
-        odict = collections.OrderedDict(sorted({}.items()))
-        lightCurve = []
+        lightCurve = readquery(sqlQuery, self.dbConn, self.log)
 
         for row in lightCurveTmp:
             odict = collections.OrderedDict(sorted({}.items()))
@@ -98,10 +96,7 @@ class models_transients_lightcurves_get(base_model):
         sqlQuery = u"""
             select * from transientBucketSummaries where transientBucketId = %(transientBucketId)s
         """ % locals()
-        extraMetadataTmp = readquery(sqlQuery, self.dbConn, self.log)
-        extraMetadata = []
-        extraMetadata[:] = [dict(list(zip(list(row.keys()), row)))
-                            for row in extraMetadataTmp]
+        extraMetadata = readquery(sqlQuery, self.dbConn, self.log)
 
         self.log.debug('completed the ``get_metadata`` method')
         return extraMetadata

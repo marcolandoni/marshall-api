@@ -1,3 +1,4 @@
 from .base_model import base_model
 from .transients.models_transients_get import models_transients_get
 from .transients_akas.models_transients_akas_get import models_transients_akas_get
+from .transients_comments.models_transients_comments import models_transients_comments_put
