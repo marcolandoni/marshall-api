@@ -18,6 +18,7 @@ import redis
 from models.transients.models_transients_get import models_transients_get
 from models.transients.models_transients_put import models_transients_element_put
 from models.transients_comments.models_transients_comments import models_transients_comments_put 
+from models.transients.models_transients_count import models_transients_count
 
 import traceback
 
@@ -169,6 +170,18 @@ def putComment():
     print(e)
     print(traceback.format_exc())
     return jsonify({"msg": "Internal Server Error. Please check the format of your request."}), 505
+
+@app.route("/countTransients", methods=["GET"])
+@jwt_required()
+def countTransients():
+  try:
+    model = models_transients_count(log, request.json, db=dbConn)
+    count = model.get()
+    return jsonify(count=count), 200
+  except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+    return jsonify({"msg": "Internal Server Error"}), 505
 
 if __name__ == "__main__":  
     app.run(port=8000)
