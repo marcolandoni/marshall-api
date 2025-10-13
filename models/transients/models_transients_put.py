@@ -95,11 +95,103 @@ class models_transients_element_put(object):
         now = datetime.now()
         now = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        # CHANGE THE MARSHALL WORKFLOW LOCATION LIST IF REQUESTED
 
         if "mwl" in self.request:
             mwl = self.request["mwl"]
             print(mwl)
+
+            # VALIDATE THE MOVE
+            if mwl not in ["inbox", "pending observation", "review for followup", "following", "followup complete", "archive"]:
+                self.response = self.response + \
+                    " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is not a valid list<BR>" % locals(
+                    )
+                self.log.debug('completed the ``_create_sqlquery`` method')
+                raise ValueError("Invalid marshallWorkflowLocation")
+                return None
+                
+            # CHECK THE OLD WORKFLOW LOCATION AND OTHER STUFF NEEDED (AS PI OR CLASSIFICATION) IN ORDER TO MOVE CORRECTLY
+
+            if oldMwl == "inbox":
+                # THE ONLY POSSIBLE MOVE IS ARCHIVE
+                if mwl != "archive":
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `inbox` list<BR>" % locals(
+                        )
+                    self.log.debug('completed the ``_create_sqlquery`` method')
+                    raise ValueError("Invalid marshallWorkflowLocation")
+                    return None
+            
+            if oldMwl == "pending observation":
+                # THE POSSIBLE MOVES ARE REVIEW FOR FOLLOWUP OR ARCHIVE. REVIEW FOR FOLLOWUP REQUIRES classifiedFlag = True
+                if mwl == "review for followup":
+                    sqlQuery = u"""
+                        select classifiedFlag from pesstoObjects where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    objectData = readquery(sqlQuery, self.dbConn, self.log)
+                    classifiedFlag = objectData[0]["classifiedFlag"]
+                    if not classifiedFlag:
+                        self.response = self.response + \
+                            " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is not classified<BR>" % locals(
+                            )
+                        self.log.debug('completed the ``_create_sqlquery`` method')
+                        raise ValueError("Invalid marshallWorkflowLocation")
+                        return None
+                elif mwl == "archive":
+                    pass
+                else:
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `pending observation` list<BR>" % locals(
+                        )           
+                    self.log.debug('completed the ``_create_sqlquery`` method')
+                    raise ValueError("Invalid marshallWorkflowLocation")
+                    return None 
+            if oldMwl == "review for followup":
+                # THE ONLY POSSIBLE MOVE IS FOLLOWUP IF THE PI IS SET OR ARCHIVE
+                if mwl == "following":
+                    sqlQuery = u"""
+                        select pi_name, pi_email from pesstoObjects where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    objectData = readquery(sqlQuery, self.dbConn, self.log)
+                    piName = objectData[0]["pi_name"]
+                    piEmail = objectData[0]["pi_email"]
+                    if not piName or not piEmail:
+                        self.response = self.response + \
+                            " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it does not have a PI assigned<BR>" % locals(
+                            )
+                        self.log.debug('completed the ``_create_sqlquery`` method')
+                        raise ValueError("Invalid marshallWorkflowLocation")
+                        return None
+                elif mwl == "archive":
+                    pass
+                else:
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `review for followup` list<BR>" % locals(
+                        )           
+                    self.log.debug('completed the ``_create_sqlquery`` method')
+                    raise ValueError("Invalid marshallWorkflowLocation")
+                    return None 
+            
+            if oldMwl == "following":
+                # THE ONLY POSSIBLE MOVE IS FOLLOWUP COMPLETE
+                if mwl != "followup complete" :
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `following` list<BR>" % locals(
+                        )
+                    self.log.debug('completed the ``_create_sqlquery`` method')
+                    raise ValueError("Invalid marshallWorkflowLocation")
+                    return None
+            
+            if oldMwl == "followup complete":
+                # THE ONLY POSSIBLE MOVE IS ARCHIVE
+                if mwl != "archive" :
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `followup complete` list<BR>" % locals(
+                        )
+                    self.log.debug('completed the ``_create_sqlquery`` method')
+                    raise ValueError("Invalid marshallWorkflowLocation")
+                    return None
+            
+
             if "snoozed" in self.request:
                 logEntry = "object snoozed by %(username)s" % locals(
                 )
@@ -132,12 +224,6 @@ class models_transients_element_put(object):
             )""" % (transientBucketId, now, logEntry)
             writequery(self.log, sqlQuery, self.dbConn)
 
-            # RESET PRIORITY IF REQUIRED
-            if mwl == "following":
-                sqlQuery = """
-                    update pesstoObjects set observationPriority = 2 where transientBucketId = %(transientBucketId)s
-                """ % locals()
-                writequery(self.log, sqlQuery, self.dbConn)
 
             # RESET THE LAST TIME REVIEWE IF REQUIRED
             if mwl == "archive":
@@ -148,7 +234,7 @@ class models_transients_element_put(object):
                 """ % locals()
                 writequery(self.log, sqlQuery, self.dbConn)
 
-        # CHANGE THE ALERT WORKFLOW LOCATION LIST IF REQUESTED
+        # CHANGE THE ALERT WORKFLOW LOCATION LIST IF REQUESTED (STILL TBD)
         if "awl" in self.request:
             awl = self.request["awl"]
             sqlQuery = """
@@ -191,12 +277,23 @@ class models_transients_element_put(object):
         now = datetime.now()
         now = now.strftime("%Y-%m-%d %H:%M:%S")
 
+        # ALLOW TO CHANGE THE PI ONLY IF THE OBJECT IS IN THE REVIEW FOR FOLLOWUP OR FOLLOWING LIST OR PI HAS ALREADY BEEN SET
+
         sqlQuery = """
-            select pi_name, pi_email from pesstoObjects where transientBucketId = %(transientBucketId)s
+            select pi_name, pi_email, marshallWorkflowLocation from pesstoObjects where transientBucketId = %(transientBucketId)s
         """ % locals()
         objectData =  readquery(sqlQuery, self.dbConn, self.log)
         oldPiName = objectData[0]["pi_name"]
         oldPiEmail = objectData[0]["pi_email"]
+        mwl = objectData[0]["marshallWorkflowLocation"]
+
+        if mwl not in ["review for followup", "following"] and (not oldPiName or not oldPiEmail):
+            self.response = self.response + \
+                " transientBucketId %(transientBucketId)s cannot have the PI changed as it is in the `%(mwl)s` list and does not have a PI assigned<BR>" % locals(
+                )
+            self.log.debug('completed the ``_change_pi_for_object`` method')
+            raise ValueError("Invalid marshallWorkflowLocation or transient does not have a PI assigned")
+            return None
 
         # CHANGE THE PI IN THE DATABASE
         sqlQuery = """
