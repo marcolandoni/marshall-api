@@ -112,7 +112,6 @@ class models_transients_get(base_model):
         regex1 = re.compile(r'[^A-Za-z0-9]')
         regex2 = re.compile(r'^(AT|SN)')
         # SEARCH
-        print('xx')
         if self.search and "q" in self.request:
             print('Here')
             searchString = self.request["q"]

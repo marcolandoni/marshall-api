@@ -22,12 +22,12 @@ from models.transients.models_transients_count import models_transients_count
 
 import traceback
 
-logging.basicConfig(filename='/home/marshall/.config/marshall_api/marshall_api.log', level=logging.INFO)
+logging.basicConfig(filename='/home/webserver/.config/marshall_api/marshall_api.log', level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
 dbSettings = {
-    'host': '127.0.0.1', 
+    'host': '192.167.39.99', 
     'user': 'marshall', 
     'password': 'mar5ha11', 
     'db': 'marshall'
@@ -137,7 +137,7 @@ def getTransients():
   except Exception as e:
     print(e)
     print(traceback.format_exc())
-    return jsonify({"msg": "Internal Server Error"}), 505
+    return jsonify({"msg": "Internal Server Error", "err": str(traceback.format_exc())}), 505
 
 
 # GENERIC APP ROUTE FOR PATCHING TRANSIENTS DATA (POSSIBLY CLASSIFICATION WILL GO UNDER THIS ROUTE)
@@ -154,7 +154,7 @@ def patchTransient():
   except Exception as e:
     print(e)
     print(traceback.format_exc())
-    return jsonify({"msg": "Internal Server Error. Please check the format of your request."}), 505
+    return jsonify({"msg": "Internal Server Error. Please check the format of your request. " + str(e)}), 505
 
 @app.route("/putComment", methods=["PUT"])
 @jwt_required()
@@ -184,4 +184,5 @@ def countTransients():
     return jsonify({"msg": "Internal Server Error"}), 505
 
 if __name__ == "__main__":  
-    app.run(port=8000)
+  print("Starting app, listening on port 8000")
+  app.run(port=8000)
