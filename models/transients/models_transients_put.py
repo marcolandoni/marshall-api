@@ -11,6 +11,7 @@ from builtins import object
 from fundamentals.mysql import readquery, writequery
 import sys
 import os
+from fundamentals import times
 
 from astrocalc.times import conversions
 from datetime import datetime, date, time
@@ -439,9 +440,7 @@ class models_transients_element_put(object):
             select p.classifiedFlag, t.raDeg, t.decDeg, t.name from transientBucket t, pesstoObjects p where replacedByRowId = 0 and t.transientBucketId = %(transientBucketId)s and t.transientBucketId=p.transientBucketId limit 1
         """ % locals()
         rows = readquery(sqlQuery, self.dbConn, self.log)
-        print(rows)
-        
-        return None
+
 
         # ADD VARIABLES TO a
         params = dict(list(self.request.items()))
@@ -470,21 +469,24 @@ class models_transients_element_put(object):
         if "clsClassificationPhase" not in params or len(params["clsClassificationPhase"]) == 0:
             params["clsClassificationPhase"] = "null"
 
-        params["username"] = self.request.authenticated_userid
-
+        params["username"] = self.request["authenticated_userid"].replace(".", " ").title()
+        print(params)
+        
         # INSERT THE NEW CLASSIFICATION ROW INTO THE TRANSIENTBUCKET
         sqlQuery = """
                 INSERT IGNORE INTO transientBucket (raDeg, decDeg, name, transientBucketId, observationDate, observationMjd, survey, spectralType, transientRedshift, classificationWRTMax, classificationPhase, reducer) VALUES(%(raDeg)s, %(decDeg)s, "%(name)s", %(transientBucketId)s, "%(clsObsdate)s", %(obsMjd)s, "%(clsSource)s", "%(clsType)s", %(clsRedshift)s, "%(clsClassificationWRTMax)s", %(clsClassificationPhase)s, "%(username)s") ON DUPLICATE KEY UPDATE raDeg = values(raDeg), decDeg = values(decDeg), name = values(name), transientBucketId = values(transientBucketId), observationDate = values(observationDate), observationMjd = values(observationMjd), survey = values(survey), spectralType = values(spectralType), transientRedshift = values(transientRedshift), classificationWRTMax = values(classificationWRTMax), classificationPhase = values(classificationPhase), reducer=values(reducer);
             """ % params
 
-        self.request.db.execute(sqlQuery)
-        self.request.db.commit()
-
-        # UPDATE THE OBJECT'S LOCATION IN THE VARIOUS MARSHALL WORKFLOWS
-        if self.request.params["clsSendTo"].lower() == "yes":
-            awl = "queued for atel"
-        else:
-            awl = "archived without alert"
+        #WRITE THE QUERY
+        writequery(self.log, sqlQuery, self.dbConn)
+        
+        # UPDATE THE OBJECT'S LOCATION IN THE VARIOUS MARSHALL WORKFLOWS  - TBD TODO - 
+        if False:
+            if self.request.params["clsSendTo"].lower() == "yes":
+                awl = "queued for atel"
+            else:
+                awl = "archived without alert"
+        awl = "archived without alert"
 
         if params["classifiedFlag"] == 1:
             sqlQuery = """
@@ -494,18 +496,16 @@ class models_transients_element_put(object):
             sqlQuery = """
                 update pesstoObjects set classifiedFlag = 1, snoozed = 0, marshallWorkflowLocation = "review for followup", alertWorkflowLocation = "%(awl)s" where transientBucketId = %(transientBucketId)s
             """ % locals()
-        self.request.db.execute(sqlQuery)
-        self.request.db.commit()
+        writequery(self.log, sqlQuery, self.dbConn)
 
-        dbConn = self.request.registry.settings["dbConn"]
-        # RECONNECT IF CONNECT WAS LOST
-        dbConn.ping(reconnect=True)
-        updater = update_transient_summaries(
-            log=emptyLogger(),
-            settings=self.request.registry.settings["yaml settings"],
-            dbConn=dbConn,
-            transientBucketId=transientBucketId
-        ).update()
+        # RUN THE STORED PROCDURE TO UPDATE THE PESSTO OBJECTS TABLE
+        sqlQuery = f"call update_single_transientbucket_summary({self.transientBucketId})"
+        writequery(
+                log=self.log,
+                sqlQuery=sqlQuery,
+                dbConn=self.dbConn
+            )
+        
 
         self.response = self.response + \
             "Add a classification to transient #%(transientBucketId)s " % locals(
