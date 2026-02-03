@@ -10,7 +10,7 @@ from flask import request
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity, create_access_token, get_jwt
-
+from flask_cors import CORS
 from datetime import timedelta
 
 import redis
@@ -33,12 +33,10 @@ dbSettings = {
     'db': 'marshall'
 }
 
-dbConn = database(
-    log=log,
-    dbSettings=dbSettings
-).connect()
+
 
 app = Flask(__name__)
+cors = CORS(app, resources={r"*": {"origins": "*"}})
 ACCESS_EXPIRES = timedelta(hours=24)
 app.config["JWT_SECRET_KEY"] = "super-secret"  # Change this!
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)
@@ -61,13 +59,17 @@ def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
 @app.route("/login", methods=["POST"])
 def login():
   try:
+    dbConn = database(
+      log=log,
+      dbSettings=dbSettings
+    ).connect()
     firstname = request.json.get("firstname", None)
     lastname = request.json.get("lastname", None)
     password = request.json.get("password", None)
 
     return login_user(dbConn, firstname, lastname, password, log)
   except:
-    return jsonify({"msg": "Internal Server Error"}), 505
+    return jsonify({"msg": "Bad request"}), 400
 
 
 @app.route("/refresh", methods=["POST"])
@@ -78,7 +80,7 @@ def refresh():
     access_token = create_access_token(identity=identity, fresh=False)
     return jsonify(access_token=access_token)
   except:
-    return jsonify({"msg": "Internal Server Error"}), 505
+    return jsonify({"msg": "Bad request or refresh token invalid"}), 400
 
 
 @app.route("/logged_user", methods=["GET"])
@@ -90,7 +92,7 @@ def logged_user():
       print(current_user)
       return jsonify(logged_in_as=current_user), 200
     except Exception as e:
-      return jsonify({"msg": "Internal Server Error"}), 505
+      return jsonify({"msg": "Bad request"}), 400
 
 
 @app.route("/logout", methods=["DELETE"])
@@ -105,15 +107,19 @@ def logout():
       # Returns "Access token revoked" or "Refresh token revoked"
       return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
   except Exception as e:
-    return jsonify({"msg": "Internal Server Error"}), 505
+    return jsonify({"msg": "Bad request or access token not found"}), 400
     print(e)
 
 # GENERIC APP ROUTE FOR GETTING TRANSIENTS DATA
 
-@app.route("/getTransients", methods=["GET"])
+@app.route("/getTransients", methods=["POST"])
 @jwt_required()
 def getTransients():
   try:
+    dbConn = database(
+      log=log,
+      dbSettings=dbSettings
+    ).connect()
     print(request.json)
     print(dict(request.json))
     print('data1' in dict(request.json))
@@ -137,14 +143,17 @@ def getTransients():
   except Exception as e:
     print(e)
     print(traceback.format_exc())
-    return jsonify({"msg": "Internal Server Error", "err": str(traceback.format_exc())}), 505
-
+    return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
 
 # GENERIC APP ROUTE FOR PATCHING TRANSIENTS DATA (POSSIBLY CLASSIFICATION WILL GO UNDER THIS ROUTE)
 @app.route("/patchTransient", methods=["PATCH"])
 @jwt_required()
 def patchTransient():
   try:
+    dbConn = database(
+      log=log,
+      dbSettings=dbSettings
+    ).connect()
     request_json = request.json
     #adding the auth user to the request.
     request_json["authenticated_userid"] = get_jwt_identity()
@@ -154,13 +163,17 @@ def patchTransient():
   except Exception as e:
     print(e)
     print(traceback.format_exc())
-    return jsonify({"msg": "Internal Server Error. Please check the format of your request. " + str(e)}), 505
+    return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
 
 # CLASSIFY TARGET ROUTE
 @app.route("/classifyTransient", methods=["PATCH"])
 @jwt_required()
 def classifyTransient():
   try:
+    dbConn = database(
+      log=log,
+      dbSettings=dbSettings
+    ).connect()
     request_json = request.json
     #adding the auth user to the request.
     request_json["authenticated_userid"] = get_jwt_identity()
@@ -176,6 +189,10 @@ def classifyTransient():
 @jwt_required()
 def putComment():
   try:
+    dbConn = database(
+      log=log,
+      dbSettings=dbSettings
+    ).connect()
     request_json = request.json
     #adding the auth user to the request.
     request_json["authenticated_userid"] = get_jwt_identity()
@@ -187,17 +204,21 @@ def putComment():
     print(traceback.format_exc())
     return jsonify({"msg": "Internal Server Error. Please check the format of your request."}), 505
 
-@app.route("/countTransients", methods=["GET"])
+@app.route("/countTransients", methods=["POST"])
 @jwt_required()
 def countTransients():
   try:
+    dbConn = database(
+      log=log,
+      dbSettings=dbSettings
+    ).connect()
     model = models_transients_count(log, request.json, db=dbConn)
     count = model.get()
     return jsonify(count=count), 200
   except Exception as e:
     print(e)
     print(traceback.format_exc())
-    return jsonify({"msg": "Internal Server Error"}), 505
+    return jsonify({"msg": "Bad request"}), 400
 
 if __name__ == "__main__":  
   print("Starting app, listening on port 8000")

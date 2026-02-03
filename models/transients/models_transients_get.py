@@ -189,6 +189,7 @@ class models_transients_get(base_model):
                     thisWhere = """`%(filterBy1)s` %(filterOp1)s %(filterValue1)s """ % self.qs
                 except:
                     thisWhere = """`%(filterBy1)s` %(filterOp1)s "%(filterValue1)s" """ % self.qs
+                    
 
             sqlWhereList.append(thisWhere)
 
@@ -253,7 +254,6 @@ class models_transients_get(base_model):
                 sortDirection = "desc"
             elif (self.qs["sortDesc"] != "True" and self.qs["sortDesc"] != True) and sortRev == 1:
                 sortDirection = "desc"
-
             if self.qs["sortBy"] == "redshift":
                 sqlQuery = """
                      select s.transientBucketId from transientBucketSummaries s, pesstoObjects p %(tcsCm)s %(queryWhere)s %(sep)s %(sec)s  order by s.best_redshift %(sortDirection)s
