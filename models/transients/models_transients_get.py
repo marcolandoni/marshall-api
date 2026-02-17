@@ -60,7 +60,14 @@ class models_transients_get(base_model):
         self.dbConn = db
         self.qs = request
         self._set_default_parameters()
-        self.transientData, self.matchedTransientBucketIds, self.totalTicketCount = self._get_transient_data_from_database()
+        
+        # Skip database query if mwl="all" (we only need counts, not data)
+        if "mwl" in self.qs and self.qs["mwl"] == "all":
+            self.transientData = []
+            self.matchedTransientBucketIds = ""
+            self.totalTicketCount = 0
+        else:
+            self.transientData, self.matchedTransientBucketIds, self.totalTicketCount = self._get_transient_data_from_database()
         
 
         log.debug(
@@ -73,10 +80,16 @@ class models_transients_get(base_model):
 
         **Return**
 
-        - ``transientData``
+        - ``transientData`` or counts dictionary if mwl="all"
 
         """
         self.log.debug('starting the ``get`` method')
+
+        # Check if mwl="all" - in this case return counts for all lists
+        if "mwl" in self.qs and self.qs["mwl"] == "all":
+            counts = self._get_all_lists_counts()
+            self.log.debug('completed the ``get`` method - returning counts for all lists')
+            return counts
 
         self.transientAkas = self._get_associated_transient_aka()
         self.transientLightcurveData = self._get_associated_lightcurve_data()
@@ -658,6 +671,58 @@ class models_transients_get(base_model):
         self.log.debug(
             'completed the ``_get_total_ticket_count_for_list`` method')
         return totalTickets
+
+    def _count_single_list(
+            self,
+            listName):
+        """
+        *count transients for a single list*
+
+        **Key Arguments**
+
+        - ``listName`` -- the name of the list to count
+
+        **Return**
+
+        - ``count`` -- count of transients in the list
+
+        """
+        self.log.debug('starting the ``_count_single_list`` method')
+
+        sqlQuery = """select count from meta_workflow_lists_counts where listName = "%(listName)s" """ % locals()
+        rows = readquery(sqlQuery, self.dbConn, self.log)
+        
+        count = 0
+        if rows:
+            count = rows[0]["count"]
+
+        self.log.debug('completed the ``_count_single_list`` method')
+        return count
+
+    def _get_all_lists_counts(
+            self):
+        """
+        *get counts for all workflow lists*
+
+        **Return**
+
+        - ``counts`` -- dictionary with counts for each list
+
+        """
+        self.log.debug('starting the ``_get_all_lists_counts`` method')
+
+        # Get all available lists from meta_workflow_lists_counts
+        sqlQuery = """select listName, count from meta_workflow_lists_counts order by listName"""
+        rows = readquery(sqlQuery, self.dbConn, self.log)
+        
+        counts = {}
+        for row in rows:
+            listName = row["listName"]
+            count = row["count"]
+            counts[listName] = count
+
+        self.log.debug('completed the ``_get_all_lists_counts`` method')
+        return counts
 
     def _get_associated_transient_history(
             self):

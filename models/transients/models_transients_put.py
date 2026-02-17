@@ -228,7 +228,7 @@ class models_transients_element_put(object):
             writequery(self.log, sqlQuery, self.dbConn)
 
 
-            # RESET THE LAST TIME REVIEWE IF REQUIRED
+            # RESET THE LAST TIME REVIEWED IF REQUIRED
             if mwl == "archive":
                 now = datetime.now()
                 now = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -243,29 +243,35 @@ class models_transients_element_put(object):
         # CHANGE THE ALERT WORKFLOW LOCATION LIST IF REQUESTED (STILL TBD TODO)
         if "awl" in self.request:
             awl = self.request["awl"]
-            sqlQuery = """
-                update pesstoObjects set alertWorkflowLocation = "%(awl)s", snoozed = 0 where transientBucketId = %(transientBucketId)s
-            """ % locals()
-            writequery(self.log, sqlQuery, self.dbConn)
-            self.response = self.response + \
-                " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation<BR>" % locals(
-                )
 
-            logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
-            )
-            for o, n in zip(["pending observation", "following", "pending classification"], ["classification targets", "followup targets", "queued for classification"]):
-                logEntry = logEntry.replace(o, n)
-            sqlQuery = u"""insert ignore into transients_history_logs (
-                transientBucketId,
-                dateCreated,
-                log
-            )
-            VALUES (
-                %s,
-                "%s",
-                "%s"
-            )""" % (transientBucketId, now, logEntry)
-            writequery(self.log, sqlQuery, self.dbConn)
+            # CURRENTLY, THE ONLY POSSIBLE MOVE IS "soxs classification released"
+            if awl =='soxs classification released' and oldAwl == 'queued for atel':
+                sqlQuery = """
+                    update pesstoObjects set alertWorkflowLocation = "%(awl)s", snoozed = 0 where transientBucketId = %(transientBucketId)s
+                """ % locals()
+                writequery(self.log, sqlQuery, self.dbConn)
+                self.response = self.response + \
+                    " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation<BR>" % locals(
+                    )
+
+                logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
+                )
+                for o, n in zip(["pending observation", "following", "pending classification"], ["classification targets", "followup targets", "queued for classification"]):
+                    logEntry = logEntry.replace(o, n)
+                sqlQuery = u"""insert ignore into transients_history_logs (
+                    transientBucketId,
+                    dateCreated,
+                    log
+                )
+                VALUES (
+                    %s,
+                    "%s",
+                    "%s"
+                )""" % (transientBucketId, now, logEntry)
+                writequery(self.log, sqlQuery, self.dbConn)
+            else:
+                raise ValueError("Invalid marshallAlertLocation")
+                return None
 
         self.log.debug('completed the ``_create_sqlquery`` method')
         return None

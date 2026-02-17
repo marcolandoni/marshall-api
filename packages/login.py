@@ -15,8 +15,8 @@ def login_user(dbConn, firstname, secondname, password, log):
         dbConn,
         log
     )
-    if len(rs) < 0:
-        return jsonify({"msg": "Bad username or password"}), 401
+    if len(rs) <= 0:
+        return jsonify({"msg": "Bad username or password", "err":"Bad username or password"}), 401
     else:
         try:
             # GETTING THE HASHED PASSWORD TO BE COMPARED WITH THE PASSED ONE
@@ -27,8 +27,10 @@ def login_user(dbConn, firstname, secondname, password, log):
                 refresh_token = create_refresh_token(identity=f"{firstname}.{secondname}")
                 return jsonify(access_token=access_token, refresh_token=refresh_token)
             else:
-                return jsonify({"msg": "Bad username or password"}), 401
-        except:
-            return jsonify({"msg": "Internal Server Error"}), 505
+                return jsonify({"msg": "Bad username or password", "err":"Bad username or password"}), 401
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            return jsonify({"msg": "Internal Server Error", "err":str(e)}), 505
 
             

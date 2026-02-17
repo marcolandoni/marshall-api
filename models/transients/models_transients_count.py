@@ -54,6 +54,35 @@ class models_transients_count(object):
         return None
 
     def get(self):
+        if self.mwfFlag == 'allQueues':
+            all_list = []
+            for queue in ['inbox', 'snoozed', 'review for followup', 'pending observation', 'following', 'followup complete', 'archive']:
+                count = self._get_single_counts(queue, None, None,None)
+                if queue == "pending observation":
+                    queue = "Classification targets"
+                if queue == "following":
+                    queue = "Followup target"
+
+                all_list.append({queue: count})
+            # ALERT WORKFLOW
+
+            for queue in ['queued for atel',]:
+                count = self._get_single_counts(None, queue, None, None)
+                all_list.append({queue: count})
+            
+
+            # NOW ADDING ALL THE CLASSIFIED TARGETS
+            count = self._get_single_counts(None, None, True, None)
+            all_list.append({"Classified": count})
+
+            return all_list
+
+        else:
+            count = self._get_single_counts(self.mwfFlag, self.awfFlag, self.cFlag, self.snoozed)
+            return count
+
+
+    def _get_single_counts(self, mwfFlag, awfFlag, cFlag, snoozed):
         """get the models_transients_count object
 
         **Return**
@@ -62,10 +91,10 @@ class models_transients_count(object):
         """
         self.log.debug('starting the ``get`` method')
 
-        mwfFlag = self.mwfFlag
-        awfFlag = self.awfFlag
-        cFlag = self.cFlag
-        snoozed = self.snoozed
+        #mwfFlag = self.mwfFlag
+        #awfFlag = self.awfFlag
+        #cFlag = self.cFlag
+        #snoozed = self.snoozed
 
         if mwfFlag == "allObsQueue":
             mwfFlag = ["following", "pending observation"]
