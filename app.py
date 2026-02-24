@@ -488,7 +488,7 @@ def getTransients():
     print(sanitized_payload)
     if not sanitized_payload:
         return jsonify({"msg": "Bad Request", "err": "Please provide a valid request."}), 400
-    if 'mwl' not in sanitized_payload and 'awl' not in sanitized_payload:
+    if 'mwl' not in sanitized_payload and 'awl' not in sanitized_payload and 'q' not in sanitized_payload:
         return jsonify({"msg": "Please provide at least a valid Marshall Workflow location or Alert Workflow location", "err": "Invalid workflow"}), 400
 
     model = models_transients_get(log, sanitized_payload, db=dbConn, search=True)

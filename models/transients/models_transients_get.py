@@ -50,7 +50,7 @@ class models_transients_get(base_model):
             "sortBy": "dateAdded",
             "sortDesc": False,
             "filterBy1": "decDeg",
-            "filterValue1": 30,
+            "filterValue1": 35,
             "filterOp1": "<",
             "filterBy2": False,
             "filterValue2": False,
