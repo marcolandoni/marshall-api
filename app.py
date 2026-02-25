@@ -41,8 +41,7 @@ ALLOWED_MWL_VALUES = {
     "following",
     "followup complete",
     "archive",
-    "allObsQueue",
-    "snoozed"
+    "allObsQueue"
 }
 
 ALLOWED_AWL_VALUES = {
@@ -94,31 +93,39 @@ def _sanitize_get_transients_request(raw):
     cleaned = {}
     # Free-text search is already heavily cleaned in the model,
     # but we still remove obviously dangerous characters here.
+    number_of_detected_params = 0
     q = raw.get("q")
     if q is not None:
         cleaned["q"] = re.sub(r"[^A-Za-z0-9]", "", str(q))[:100]
+        number_of_detected_params = number_of_detected_params + 1
 
     mwl = raw.get("mwl")
     if mwl is not None:
         mwl_str = str(mwl)
         if mwl_str in ALLOWED_MWL_VALUES:
             cleaned["mwl"] = mwl_str
+            number_of_detected_params = number_of_detected_params + 1
 
     awl = raw.get("awl")
     if awl is not None:
         awl_str = str(awl)
         if awl_str in ALLOWED_AWL_VALUES:
             cleaned["awl"] = awl_str
-    if mwl and awl:
-        return None #only once at time
+            number_of_detected_params = number_of_detected_params + 1
+
     cf = raw.get("cf")
     if cf is not None:
         # classifiedFlag is stored as "1"/"0" in SQL
         cleaned["cf"] = "1" if str(cf) in ("1", "true", "True", "yes") else "0"
+        number_of_detected_params = number_of_detected_params + 1
 
     if "snoozed" in raw:
         snoozed = raw.get("snoozed")
         cleaned["snoozed"] = bool(snoozed in (True, "True", "1", 1))
+        number_of_detected_params = number_of_detected_params + 1
+
+    if number_of_detected_params > 1:
+        return None
 
     # Column / sort identifiers
     for key in ("filterBy1", "filterBy2", "sortBy"):
@@ -488,8 +495,8 @@ def getTransients():
     print(sanitized_payload)
     if not sanitized_payload:
         return jsonify({"msg": "Bad Request", "err": "Please provide a valid request."}), 400
-    if 'mwl' not in sanitized_payload and 'awl' not in sanitized_payload and 'q' not in sanitized_payload:
-        return jsonify({"msg": "Please provide at least a valid Marshall Workflow location or Alert Workflow location", "err": "Invalid workflow"}), 400
+    if 'mwl' not in sanitized_payload and 'awl' not in sanitized_payload and 'q' not in sanitized_payload and 'snoozed' not in sanitized_payload and 'cf' not in sanitized_payload:
+        return jsonify({"msg": "Please provide at least a valid Marshall Workflow location, Alert Workflow locationm query string or snoozed flag!", "err": "Invalid workflow"}), 400
 
     model = models_transients_get(log, sanitized_payload, db=dbConn, search=True)
     result = model.get()
@@ -502,17 +509,22 @@ def getTransients():
       return jsonify(response), 200
     
     # Otherwise, it's the standard response structure
+
+    # TODO - Currently, the free text search works only for a single transient. In principle
+    # it should work for many. This workaround (checking len of transientData) is inserted
+    # for returning a consistent respond.
+
     qs, transientData, transientAkas, transientLightcurveData, transientAtelMatches, transients_comments, totalTicketCount, transient_history, transient_crossmatches, skyTags = result
     response ={
       "qs": qs,
       "transientData": transientData,
-      "akas": transientAkas,
-      "lc_data": transientLightcurveData,
-      "ts_atel_matches": transientAtelMatches,
-      "comments": transients_comments,
-      "totalTicketCount": totalTicketCount,
-      "transient_history": transient_history,
-      "ts_xmatches": transient_crossmatches,
+      "akas": transientAkas if len(transientData) > 0  else [],
+      "lc_data": transientLightcurveData if len(transientData) > 0  else [],
+      "ts_atel_matches": transientAtelMatches if len(transientData) > 0  else [],
+      "comments": transients_comments if len(transientData) > 0  else [],
+      "totalTicketCount": totalTicketCount if len(transientData) > 0  else [],
+      "transient_history": transient_history if len(transientData) > 0  else [],
+      "ts_xmatches": transient_crossmatches if len(transientData) > 0  else [],
       "ts_skytag": skyTags
 
     }

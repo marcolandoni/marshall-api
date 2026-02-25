@@ -128,10 +128,11 @@ class models_transients_get(base_model):
         if self.search and "q" in self.request:
             print('Here')
             searchString = self.request["q"]
-            searchString = regex1.sub('', searchString)
-            searchString = regex2.sub('^(AT|SN)', searchString)
-            self.log.debug("""searchString: `%(searchString)s`""" % locals())
+            #searchString = regex1.sub('', searchString)
+            #searchString = regex2.sub('^(AT|SN)', searchString)
+            #self.log.debug("""searchString: `%(searchString)s`""" % locals())
 
+            # Usa LIKE per abilitare ricerche parziali:
             sqlQuery = f"""
                 select  DISTINCT  transientBucketId from marshall_transient_akas where  REGEXP_REPLACE(name,"[^A-Za-z0-9]","") REGEXP '{searchString}' 
                         union
@@ -139,15 +140,18 @@ class models_transients_get(base_model):
                         union
                 select DISTINCT  transientBucketId from lvk_skytag s, lvk_alerts a, lvk_events e where s.mapId=a.primaryId and e.superevent_id=a.superevent_id and a.alert_time =e.alert_time and  REGEXP_REPLACE(s.superevent_id,"[^A-Za-z0-9]","") REGEXP  '{searchString}' 
             """
-            print(sqlQuery)
 
             rows = readquery(sqlQuery, self.dbConn, self.log)
-
             searchList = ""
             for row in rows:
                 transientBucketId = row["transientBucketId"]
                 searchList = """%(searchList)s %(transientBucketId)s,""" % locals(
                 )
+            print("SEARCH LIST: ")
+            print(searchList)
+            print("SEARCH STRING: ")
+            print(searchString)
+            
 
             thisWhere = """t.transientBucketId in (%(searchList)s -99)""" % locals(
             )
