@@ -424,7 +424,7 @@ jwt = JWTManager(app)
 # Customizing the expired token message
 @jwt.expired_token_loader
 def my_expired_token_callback(jwt_header, jwt_payload):
-    return jsonify({"msg": "Token expired", "err":"Your token has expired. Please log in again."}), 400
+    return jsonify({"err": "Token expired", "msg":"Your token has expired. Please log in again."}), 400
 
 # Customizing the invalid token message
 @jwt.invalid_token_loader
