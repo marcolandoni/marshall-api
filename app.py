@@ -15,13 +15,14 @@ from flask_cors import CORS
 from datetime import timedelta
 
 import redis
-
+import base64
 from models.transients.models_transients_get import models_transients_get
 from models.transients.models_transients_put import models_transients_element_put
 from models.transients_comments.models_transients_comments import models_transients_comments_put 
 from models.transients.models_transients_count import models_transients_count
 
 import traceback
+import os
 
 logging.basicConfig(filename='/home/webserver/.config/marshall_api/marshall_api.log', level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -648,6 +649,95 @@ def countTransients():
     return jsonify(count=count), 200
   except Exception as err:
     return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
+
+@app.route("/getAssets", methods=["POST"])
+@jwt_required()
+def getAssets():
+  try:
+    raw_payload = request.get_json(silent=True) or {}
+    if not isinstance(raw_payload, dict):
+      return jsonify({"msg": "Bad Request", "err": "Request body must be a JSON object"}), 400
+
+    transient_ids = raw_payload.get("transientBucketIDs")
+    if not isinstance(transient_ids, list):
+      return jsonify({"msg": "Bad Request", "err": "transientBucketIDs must be a list"}), 400
+
+    asset_defs = [
+      {
+        "filename": "master_lightcurve.png",
+        "assetDescription": "PHOT",
+        "format": "png"
+      },
+      {
+        "filename": "ps1_map_color.jpeg",
+        "assetDescription": "PS1",
+        "format": "jpg"
+      },
+      {
+        "filename": "atlas_target_stamp.jpeg",
+        "assetDescription": "ATLAS",
+        "format": "jpeg"
+      },
+      {
+        "filename": "ps1_target_stamp.jpeg",
+        "assetDescription": "PS1 Stamp",
+        "format": "jpeg"
+      }
+    ]
+
+    base_path = "/mnt/cartella_remota/transients"
+    results = {}
+
+    for tbid in transient_ids:
+      assets = []
+      try:
+        safe_tbid = str(tbid)
+        dir_path = os.path.join(base_path, safe_tbid)
+        if not os.path.isdir(dir_path):
+          # If the folder does not exist, skip, provide empty or error entry
+          results[safe_tbid] = []  # Empty array if folder doesn't exist
+          continue
+        for ad in asset_defs:
+          file_path = os.path.join(dir_path, ad["filename"])
+          if os.path.isfile(file_path):
+            try:
+              with open(file_path, "rb") as f:
+                file_data = f.read()
+                encoded_data = base64.b64encode(file_data).decode("utf-8")
+              assets.append({
+                "assetDescription": ad["assetDescription"],
+                "data": encoded_data,
+                "format": ad["format"]
+              })
+            except Exception as e:
+              assets.append({
+                "assetDescription": ad["assetDescription"],
+                "data": None,
+                "format": ad["format"]
+              })  
+              # Error reading a file, skip this asset
+              continue
+          else:
+            assets.append({
+                "assetDescription": ad["assetDescription"],
+                "data": None,
+                "format": ad["format"]
+              })  
+        results[safe_tbid] = assets
+      except Exception as ex:
+        print(ex)
+        # Any error relative to this tbid: report as empty or log, avoid aborting on single error
+        results[safe_tbid] = []
+        continue
+    return jsonify(results), 200
+  except Exception as e:
+    print(e)
+    print(traceback.format_exc())
+    return jsonify({
+      "msg": "Bad Request",
+      "err": str(traceback.format_exc())
+    }), 400
+
 
 if __name__ == "__main__":  
   print("Starting app, listening on port 8000")

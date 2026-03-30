@@ -741,6 +741,7 @@ class models_transients_get(base_model):
         sqlQuery = """
             select * from transients_history_logs where transientBucketId in (%(matchedTransientBucketIds)s) order by dateCreated desc
         """ % locals()
+        print(sqlQuery)
 
         objectHistory = readquery(sqlQuery, self.dbConn, self.log)
 
