@@ -13,7 +13,8 @@ from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity, create_access_token, get_jwt
 from flask_cors import CORS
 from datetime import timedelta
-
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 import redis
 import base64
 from models.transients.models_transients_get import models_transients_get
@@ -50,7 +51,30 @@ ALLOWED_AWL_VALUES = {
     "soxs classification released",
     "archived without alert",
 }
+BASE_ASSETS_PATH = "/mnt/cartella_remota/transients"
 
+asset_defs = [
+      {
+        "filename": "master_lightcurve.png",
+        "assetDescription": "PHOT",
+        "format": "png"
+      },
+      {
+        "filename": "ps1_map_color.jpeg",
+        "assetDescription": "PS1",
+        "format": "jpg"
+      },
+      {
+        "filename": "atlas_target_stamp.jpeg",
+        "assetDescription": "ATLAS",
+        "format": "jpeg"
+      },
+      {
+        "filename": "ps1_target_stamp.jpeg",
+        "assetDescription": "PS1 Stamp",
+        "format": "jpeg"
+      }
+    ]
 
 def _sanitize_identifier(value):
     """
@@ -650,53 +674,18 @@ def countTransients():
   except Exception as err:
     return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
 
-@app.route("/getAssets", methods=["POST"])
-@jwt_required()
-def getAssets():
+
+def getSingleAsset(tbid):
+  assets = []
+  print('Here')
   try:
-    raw_payload = request.get_json(silent=True) or {}
-    if not isinstance(raw_payload, dict):
-      return jsonify({"msg": "Bad Request", "err": "Request body must be a JSON object"}), 400
+      safe_tbid = str(tbid)
+      dir_path = os.path.join(BASE_ASSETS_PATH, safe_tbid)
+      print(dir_path)
+      if not os.path.isdir(dir_path):
+        results = []
+      else:
 
-    transient_ids = raw_payload.get("transientBucketIDs")
-    if not isinstance(transient_ids, list):
-      return jsonify({"msg": "Bad Request", "err": "transientBucketIDs must be a list"}), 400
-
-    asset_defs = [
-      {
-        "filename": "master_lightcurve.png",
-        "assetDescription": "PHOT",
-        "format": "png"
-      },
-      {
-        "filename": "ps1_map_color.jpeg",
-        "assetDescription": "PS1",
-        "format": "jpg"
-      },
-      {
-        "filename": "atlas_target_stamp.jpeg",
-        "assetDescription": "ATLAS",
-        "format": "jpeg"
-      },
-      {
-        "filename": "ps1_target_stamp.jpeg",
-        "assetDescription": "PS1 Stamp",
-        "format": "jpeg"
-      }
-    ]
-
-    base_path = "/mnt/cartella_remota/transients"
-    results = {}
-
-    for tbid in transient_ids:
-      assets = []
-      try:
-        safe_tbid = str(tbid)
-        dir_path = os.path.join(base_path, safe_tbid)
-        if not os.path.isdir(dir_path):
-          # If the folder does not exist, skip, provide empty or error entry
-          results[safe_tbid] = []  # Empty array if folder doesn't exist
-          continue
         for ad in asset_defs:
           file_path = os.path.join(dir_path, ad["filename"])
           if os.path.isfile(file_path):
@@ -716,19 +705,42 @@ def getAssets():
                 "format": ad["format"]
               })  
               # Error reading a file, skip this asset
-              continue
           else:
             assets.append({
                 "assetDescription": ad["assetDescription"],
                 "data": None,
                 "format": ad["format"]
               })  
-        results[safe_tbid] = assets
-      except Exception as ex:
+  except Exception as ex:
         print(ex)
         # Any error relative to this tbid: report as empty or log, avoid aborting on single error
-        results[safe_tbid] = []
-        continue
+        results = []
+  return tbid, assets
+
+
+@app.route("/getAssets", methods=["POST"])
+@jwt_required()
+def getAssets():
+  try:
+    raw_payload = request.get_json(silent=True) or {}
+    if not isinstance(raw_payload, dict):
+      return jsonify({"msg": "Bad Request", "err": "Request body must be a JSON object"}), 400
+
+    transient_ids = raw_payload.get("transientBucketIDs")
+    if not isinstance(transient_ids, list):
+      return jsonify({"msg": "Bad Request", "err": "transientBucketIDs must be a list"}), 400
+    
+    results = {}
+    futures = []
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
+    for tbid in transient_ids:
+      futures.append(executor.submit(getSingleAsset, tbid=tbid))
+
+    for future in concurrent.futures.as_completed(futures):
+      tbid, data = future.result()
+      results[tbid] = data
+      #results.append(future.result())
+      
     return jsonify(results), 200
   except Exception as e:
     print(e)
