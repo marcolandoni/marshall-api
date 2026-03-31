@@ -486,13 +486,13 @@ class models_transients_element_put(object):
         #WRITE THE QUERY
         writequery(self.log, sqlQuery, self.dbConn)
         
-        # UPDATE THE OBJECT'S LOCATION IN THE VARIOUS MARSHALL WORKFLOWS  - TBD TODO - 
-        if False:
-            if self.request.params["clsSendTo"].lower() == "yes":
-                awl = "queued for atel"
-            else:
-                awl = "archived without alert"
-        awl = "archived without alert"
+        # UPDATE THE OBJECT'S LOCATION IN THE VARIOUS MARSHALL WORKFLOWS
+
+        if  params["clsSendTo"].lower() == "yes":
+            awl = "queued for atel"
+        else:
+            awl = "archived without alert"
+
 
         if params["classifiedFlag"] == 1:
             sqlQuery = """
