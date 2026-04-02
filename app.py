@@ -702,20 +702,20 @@ def getSingleAsset(tbid):
                 file_data = f.read()
                 encoded_data = base64.b64encode(file_data).decode("utf-8")
               assets[ad["assetGroup"]].append({
-                "assetDescription": ad["assetDescription"],
+                "label": ad["assetDescription"],
                 "data": encoded_data,
                 "format": ad["format"]
               })
             except Exception as e:
               assets[ad["assetGroup"]].append({
-                "assetDescription": ad["assetDescription"],
+                "label": ad["assetDescription"],
                 "data": None,
                 "format": ad["format"]
               })  
               # Error reading a file, skip this asset
           else:
             assets[ad["assetGroup"]].append({
-                "assetDescription": ad["assetDescription"],
+                "label": ad["assetDescription"],
                 "data": None,
                 "format": ad["format"]
               })  
