@@ -94,6 +94,7 @@ class models_transients_element_put(object):
         objectData = readquery(sqlQuery, self.dbConn, self.log)
 
         oldMwl = objectData[0]["marshallWorkflowLocation"]
+        print(f"The old mwl is {oldMwl}")
         oldAwl = objectData[0]["alertWorkflowLocation"]
         username = self.request["authenticated_userid"].replace(".", " ").title()
         now = datetime.now()
@@ -115,8 +116,9 @@ class models_transients_element_put(object):
                 
             # CHECK THE OLD WORKFLOW LOCATION AND OTHER STUFF NEEDED (AS PI OR CLASSIFICATION) IN ORDER TO MOVE CORRECTLY
 
-            if oldMwl == "inbox":
+            if oldMwl == "Inbox":
                 # THE ONLY POSSIBLE MOVE IS ARCHIVE
+                print("Here")
                 if mwl != "archive":
                     self.response = self.response + \
                         " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `inbox` list<BR>" % locals(

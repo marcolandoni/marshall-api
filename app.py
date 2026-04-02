@@ -57,22 +57,26 @@ asset_defs = [
       {
         "filename": "master_lightcurve.png",
         "assetDescription": "PHOT",
-        "format": "png"
+        "format": "png",
+        "assetGroup":"PHOT"
       },
       {
         "filename": "ps1_map_color.jpeg",
         "assetDescription": "PS1",
-        "format": "jpg"
+        "format": "jpg",
+        "assetGroup":"HOST"
       },
       {
         "filename": "atlas_target_stamp.jpeg",
         "assetDescription": "ATLAS",
-        "format": "jpeg"
+        "format": "jpeg",
+        "assetGroup":"STAMP"
       },
       {
         "filename": "ps1_target_stamp.jpeg",
         "assetDescription": "PS1 Stamp",
-        "format": "jpeg"
+        "format": "jpeg",
+        "assetGroup":"STAMP"
       }
     ]
 
@@ -676,7 +680,11 @@ def countTransients():
 
 
 def getSingleAsset(tbid):
-  assets = []
+  assets = {
+    "HOST": [],
+    "PHOT": [],
+    "STAMP": []
+  }
   print('Here')
   try:
       safe_tbid = str(tbid)
@@ -693,20 +701,20 @@ def getSingleAsset(tbid):
               with open(file_path, "rb") as f:
                 file_data = f.read()
                 encoded_data = base64.b64encode(file_data).decode("utf-8")
-              assets.append({
+              assets[ad["assetGroup"]].append({
                 "assetDescription": ad["assetDescription"],
                 "data": encoded_data,
                 "format": ad["format"]
               })
             except Exception as e:
-              assets.append({
+              assets[ad["assetGroup"]].append({
                 "assetDescription": ad["assetDescription"],
                 "data": None,
                 "format": ad["format"]
               })  
               # Error reading a file, skip this asset
           else:
-            assets.append({
+            assets[ad["assetGroup"]].append({
                 "assetDescription": ad["assetDescription"],
                 "data": None,
                 "format": ad["format"]
@@ -715,6 +723,7 @@ def getSingleAsset(tbid):
         print(ex)
         # Any error relative to this tbid: report as empty or log, avoid aborting on single error
         results = []
+
   return tbid, assets
 
 
