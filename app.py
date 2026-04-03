@@ -433,12 +433,12 @@ def my_expired_token_callback(jwt_header, jwt_payload):
 # Customizing the invalid token message
 @jwt.invalid_token_loader
 def my_invalid_token_callback(error_string):
-    return jsonify({"msg": "Token not valid", "err":"Your access token is not valid. Please log in again."}), 400
+    return jsonify({"msg": "Your access token is not valid. Please log in again.", "err":"Token non valid."}), 400
 
 # Customizing missing token message
 @jwt.unauthorized_loader
 def my_missing_token_callback(error_string):
-    return jsonify({"msg": "Unauthorized", "err":"Please obtain an access token via login to continue."}), 400
+    return jsonify({"msg": "Please obtain an access token via login to continue.", "err":"Unauthorized"}), 400
 
 
 jwt_redis_blocklist = redis.StrictRedis(
