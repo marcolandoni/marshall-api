@@ -56,7 +56,7 @@ class models_transients_element_put(object):
         self.log.debug('starting the ``get`` method')
 
         # move the objects to another list if requested
-        if "mwl" in self.request or "awl" in self.request:
+        if "mwl" in self.request or "awl" in self.request or "snoozed" in self.request:
             self._move_transient_to_another_list()
             return self.response
 
@@ -85,6 +85,7 @@ class models_transients_element_put(object):
             self):
         """ create sqlquery for the put request
         """
+        print("Moving the transient to another list")
         self.log.debug('starting the ``_create_sqlquery`` method')
         transientBucketId = self.transientBucketId
 
@@ -100,6 +101,48 @@ class models_transients_element_put(object):
         now = datetime.now()
         now = now.strftime("%Y-%m-%d %H:%M:%S")
 
+
+        if "snoozed" in self.request:
+            if oldMwl.lower() == "inbox":
+                print("Snoozing the object")
+                logEntry = "object snoozed by %(username)s" % locals(
+                )
+                snoozed = ", snoozed = 1"
+                sqlQuery = """
+                    update pesstoObjects set snoozed = 1, marshallWorkflowLocation = "archive" where transientBucketId = %(transientBucketId)s
+                """ % locals()
+                writequery(self.log, sqlQuery, self.dbConn)
+
+                #NOW UPDATING THE LOG
+                sqlQuery = u"""insert ignore into transients_history_logs (
+                transientBucketId,
+                dateCreated,
+                log
+                )
+                VALUES (
+                %s,
+                "%s",
+                "%s"
+                )""" % (transientBucketId, now, logEntry)
+                writequery(self.log, sqlQuery, self.dbConn)
+
+
+
+                self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s snoozed by %(username)s<BR>" % locals(
+                    )
+
+
+
+                self.log.debug('completed the ``_create_sqlquery`` method')
+                return None
+            else:
+                self.response = self.response + \
+                    " transientBucketId %(transientBucketId)s cannot be snoozed as it is not in the `inbox` list<BR>" % locals(
+                    )
+                self.log.debug('completed the ``_create_sqlquery`` method')
+                raise ValueError("Invalid marshallWorkflowLocation")
+                return None
 
         if "mwl" in self.request:
             mwl = self.request["mwl"]
@@ -197,14 +240,7 @@ class models_transients_element_put(object):
                     raise ValueError("Invalid marshallWorkflowLocation")
                     return None
 
-            if "snoozed" in self.request:
-                logEntry = "object snoozed by %(username)s" % locals(
-                )
-                snoozed = ", snoozed = 1"
-            else:
-                logEntry = "moved from '%(oldMwl)s' to '%(mwl)s' list by %(username)s" % locals(
-                )
-                snoozed = ", snoozed = 0"
+
 
             sqlQuery = """
                 update pesstoObjects set marshallWorkflowLocation = "%(mwl)s" %(snoozed)s  where transientBucketId = %(transientBucketId)s
@@ -465,11 +501,11 @@ class models_transients_element_put(object):
             utDatetime="%(clsObsdate)sT00:00:00.0" % params)
 
         # ADD SOME DEFAULT VALUES / NULL VALUES
-        if "clsPeculiar" in params:
+        if "clsPeculiar" in params and params["clsType"] == True:
             params[
                 "clsSnClassification"] = "%(clsSnClassification)s-p" % params
         if params["clsType"] == "supernova":
-            params["clsType"] = params["clsSnClassification"]
+            params["clsType"] = "SN " + params["clsSnClassification"]
         if "clsRedshift" not in params or len(params["clsRedshift"]) == 0:
             params["clsRedshift"] = "null"
         if "clsClassificationWRTMax" not in params:
