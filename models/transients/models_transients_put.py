@@ -58,19 +58,22 @@ class models_transients_element_put(object):
         # move the objects to another list if requested
         if "mwl" in self.request or "awl" in self.request or "snoozed" in self.request:
             self._move_transient_to_another_list()
+            self._refresh_sidebar_list_counts()
             return self.response
 
         # change the pi is requested
         if set(("piName", "piEmail")) <= set(self.request):
             self._change_pi_for_object()
+            self._refresh_sidebar_list_counts()
             return self.response
 
         if "observationPriority" in self.request:
-            self._set_observational_priority_for_object()
+            self.response = "Cannot change priority from this endpoint. Priorities should be given via Scheduler API."
             return self.response
         
         if "clsType" in self.request:
             self._add_transient_classification()
+            self._refresh_sidebar_list_counts()
             return self.response
 
         # throw warning if nothing has changed
@@ -90,19 +93,20 @@ class models_transients_element_put(object):
         transientBucketId = self.transientBucketId
 
         sqlQuery = u"""
-            select marshallWorkflowLocation, alertWorkflowLocation from pesstoObjects where transientBucketId = %(transientBucketId)s
+            select marshallWorkflowLocation, alertWorkflowLocation, snoozed from pesstoObjects where transientBucketId = %(transientBucketId)s
         """ % locals()
         objectData = readquery(sqlQuery, self.dbConn, self.log)
 
         oldMwl = objectData[0]["marshallWorkflowLocation"]
         print(f"The old mwl is {oldMwl}")
         oldAwl = objectData[0]["alertWorkflowLocation"]
+        oldSnoozed = objectData[0]["snoozed"]
         username = self.request["authenticated_userid"].replace(".", " ").title()
         now = datetime.now()
         now = now.strftime("%Y-%m-%d %H:%M:%S")
 
-
-        if "snoozed" in self.request:
+        ## TODO: Controlla qua se c'è un snoozed.
+        if "snoozed" in self.request and self.request["snoozed"] == True:
             if oldMwl.lower() == "inbox":
                 print("Snoozing the object")
                 logEntry = "object snoozed by %(username)s" % locals(
@@ -143,6 +147,47 @@ class models_transients_element_put(object):
                 self.log.debug('completed the ``_create_sqlquery`` method')
                 raise ValueError("Invalid marshallWorkflowLocation")
                 return None
+
+
+        if "snoozed" in self.request and self.request["snoozed"] == False:
+            if oldSnoozed == True:
+            # Check that the object is really snoozed.
+
+                sqlQuery = """
+                    update pesstoObjects set snoozed = 0, marshallWorkflowLocation = "inbox" where transientBucketId = %(transientBucketId)s
+                """ % locals()
+                writequery(self.log, sqlQuery, self.dbConn)
+                logEntry = "object unsnoozed by %(username)s" % locals(
+                )
+
+                #NOW UPDATING THE LOG
+                sqlQuery = u"""insert ignore into transients_history_logs (
+                transientBucketId,
+                dateCreated,
+                log
+                )
+                VALUES (
+                %s,
+                "%s",
+                "%s"
+                )""" % (transientBucketId, now, logEntry)
+                writequery(self.log, sqlQuery, self.dbConn)
+
+
+
+                self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s unsnoozed by %(username)s<BR>" % locals(
+                    )
+                return None
+            else:
+                self.response = self.response + \
+                    " transientBucketId %(transientBucketId)s cannot be unsnoozed as it is not in snoozed." % locals(
+                    )
+                raise ValueError("Invalid marshallWorkflowLocation")
+                return None
+
+
+
 
         if "mwl" in self.request:
             mwl = self.request["mwl"]
@@ -241,18 +286,17 @@ class models_transients_element_put(object):
                     return None
 
 
-
+            
             sqlQuery = """
-                update pesstoObjects set marshallWorkflowLocation = "%(mwl)s" %(snoozed)s  where transientBucketId = %(transientBucketId)s
+                update pesstoObjects set marshallWorkflowLocation = "%(mwl)s"   where transientBucketId = %(transientBucketId)s
             """ % locals()
             writequery(self.log, sqlQuery, self.dbConn)
             self.response = self.response + \
                 " transientBucketId %(transientBucketId)s moved to the `%(mwl)s` marshallWorkflowLocation<BR>" % locals(
                 )
-
-            for o, n in zip(["pending observation", "following", "pending classification"], ["classification targets", "followup targets", "queued for classification"]):
-                logEntry = logEntry.replace(o, n)
-
+            logEntry = " transientBucketId %(transientBucketId)s moved to the `%(mwl)s` marshallWorkflowLocation<BR> by %(username)s" % locals(
+                )
+            now = datetime.now()
             sqlQuery = u"""insert ignore into transients_history_logs (
                 transientBucketId,
                 dateCreated,
@@ -267,6 +311,8 @@ class models_transients_element_put(object):
 
 
             # RESET THE LAST TIME REVIEWED IF REQUIRED
+            ## TODO Recheck action on Archive here
+
             if mwl == "archive":
                 now = datetime.now()
                 now = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -282,34 +328,36 @@ class models_transients_element_put(object):
         if "awl" in self.request:
             awl = self.request["awl"]
 
-            # CURRENTLY, THE ONLY POSSIBLE MOVE IS "soxs classification released"
-            if awl =='soxs classification released' and oldAwl == 'queued for atel':
+            if awl == "queued for atel":
+                #Shoud we check for the marshall location ? If this is the case, then do it here
                 sqlQuery = """
                     update pesstoObjects set alertWorkflowLocation = "%(awl)s", snoozed = 0 where transientBucketId = %(transientBucketId)s
                 """ % locals()
                 writequery(self.log, sqlQuery, self.dbConn)
                 self.response = self.response + \
-                    " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation<BR>" % locals(
+                    " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation" % locals(
                     )
 
                 logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
                 )
-                for o, n in zip(["pending observation", "following", "pending classification"], ["classification targets", "followup targets", "queued for classification"]):
-                    logEntry = logEntry.replace(o, n)
-                sqlQuery = u"""insert ignore into transients_history_logs (
-                    transientBucketId,
-                    dateCreated,
-                    log
-                )
-                VALUES (
-                    %s,
-                    "%s",
-                    "%s"
-                )""" % (transientBucketId, now, logEntry)
-                writequery(self.log, sqlQuery, self.dbConn)
-            else:
-                raise ValueError("Invalid marshallAlertLocation")
                 return None
+            if awl == "released" or awl == "not to be released":
+                if oldAwl == "queued for atel":
+                    sqlQuery = """
+                    update pesstoObjects set alertWorkflowLocation = "%(awl)s", snoozed = 0 where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation" % locals(
+                     )
+
+                    logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
+                    )
+                    return None
+                else:
+                    raise ValueError("Invalid marshallAlertLocation")
+
+
 
         self.log.debug('completed the ``_create_sqlquery`` method')
         return None
@@ -421,6 +469,7 @@ class models_transients_element_put(object):
 
         observationPriority = int(observationPriority)
         oldobservationPriority = int(oldobservationPriority)
+        ## TODO: recheck priorities
 
         if mwl == "following":
             for n, w in zip([1, 2, 3, 4], ["CRITICAL", "IMPORTANT", "USEFUL", "NONE"]):
@@ -558,6 +607,54 @@ class models_transients_element_put(object):
         self.log.debug(
             'completed the ``_add_transient_classification`` method')
         return None
+
+    def _refresh_sidebar_list_counts(self):
+        self.log.debug('starting the ``put`` method')
+
+        # all marshall workflow list titles
+        marshallWorkflowLists = ["inbox", "archive", "following", "pending observation",
+                                 "followup complete", "review for followup", "pending classification"]
+
+        # count objects in each list and update the `meta_workflow_lists_counts`
+        # table
+        for thisList in marshallWorkflowLists:
+            sqlListName = thisList.replace(" ", "_")
+            sqlQuery = """update meta_workflow_lists_counts set count = (select count(*) from pesstoObjects where marshallWorkflowLocation="%(thisList)s") where listname = "%(thisList)s" """ % locals(
+            )
+            writequery(self.log, sqlQuery, self.dbConn)
+
+
+        # all alert workflow list titles
+        alertWorkflowLists = [
+            "external alert released", "pessto classification released", "archived without alert", "queued for atel"]
+
+        # count objects in each list and update the `meta_workflow_lists_counts`
+        # table
+        for thisList in alertWorkflowLists:
+            sqlListName = thisList.replace(" ", "_")
+            sqlQuery = """update meta_workflow_lists_counts set count = (select count(*) from pesstoObjects where alertWorkflowLocation="%(thisList)s") where listname = "%(thisList)s" """ % locals(
+            )
+            writequery(self.log, sqlQuery, self.dbConn)
+
+        # count all objects
+        sqlQuery = """update meta_workflow_lists_counts set count = (select count(*) from pesstoObjects) where listname = "all" """ % locals(
+        )
+        writequery(self.log, sqlQuery, self.dbConn)
+
+
+        # count classified objects
+        sqlQuery = """update meta_workflow_lists_counts set count = (select count(*) from pesstoObjects where classifiedFlag = 1) where listname = "classified" """ % locals(
+        )
+        writequery(self.log, sqlQuery, self.dbConn)
+
+
+        # count snoozed objects
+        sqlQuery = """update meta_workflow_lists_counts set count = (select count(*) from pesstoObjects where snoozed = 1) where listname = "snoozed" """ % locals(
+        )
+        writequery(self.log, sqlQuery, self.dbConn)
+
+
+        self.log.debug('completed the ``put`` method')
 
 
     # xt-class-method

@@ -48,8 +48,8 @@ ALLOWED_MWL_VALUES = {
 
 ALLOWED_AWL_VALUES = {
     "queued for atel",
-    "soxs classification released",
-    "archived without alert",
+    "released",
+    "not to be released",
 }
 BASE_ASSETS_PATH = "/mnt/cartella_remota/transients"
 
