@@ -24,6 +24,7 @@ from models.transients.models_transients_count import models_transients_count
 
 import traceback
 import os
+from functools import lru_cache
 
 logging.basicConfig(filename='/home/webserver/.config/marshall_api/marshall_api.log', level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -79,6 +80,13 @@ asset_defs = [
         "assetGroup":"STAMP"
       }
     ]
+
+
+@lru_cache(maxsize=2048)
+def _read_b64_cached(file_path: str, mtime_ns: int, size: int) -> str:
+  with open(file_path, "rb") as f:
+    file_data = f.read()
+  return base64.b64encode(file_data).decode("utf-8")
 
 def _sanitize_identifier(value):
     """
@@ -685,44 +693,30 @@ def getSingleAsset(tbid):
     "PHOT": [],
     "STAMP": []
   }
-  print('Here')
   try:
       safe_tbid = str(tbid)
       dir_path = os.path.join(BASE_ASSETS_PATH, safe_tbid)
-      print(dir_path)
-      if not os.path.isdir(dir_path):
-        results = []
-      else:
-
+      if os.path.isdir(dir_path):
         for ad in asset_defs:
           file_path = os.path.join(dir_path, ad["filename"])
-          if os.path.isfile(file_path):
-            try:
-              with open(file_path, "rb") as f:
-                file_data = f.read()
-                encoded_data = base64.b64encode(file_data).decode("utf-8")
-              assets[ad["assetGroup"]].append({
-                "label": ad["assetDescription"],
-                "data": encoded_data,
-                "format": ad["format"]
-              })
-            except Exception as e:
-              assets[ad["assetGroup"]].append({
-                "label": ad["assetDescription"],
-                "data": None,
-                "format": ad["format"]
-              })  
-              # Error reading a file, skip this asset
-          else:
-            assets[ad["assetGroup"]].append({
-                "label": ad["assetDescription"],
-                "data": None,
-                "format": ad["format"]
-              })  
+          encoded_data = None
+          try:
+            st = os.stat(file_path)
+            encoded_data = _read_b64_cached(file_path, st.st_mtime_ns, st.st_size)
+          except FileNotFoundError:
+            encoded_data = None
+          except Exception:
+            encoded_data = None
+
+          assets[ad["assetGroup"]].append({
+            "label": ad["assetDescription"],
+            "data": encoded_data,
+            "format": ad["format"]
+          })
   except Exception as ex:
         print(ex)
         # Any error relative to this tbid: report as empty or log, avoid aborting on single error
-        results = []
+        pass
 
   return tbid, assets
 
