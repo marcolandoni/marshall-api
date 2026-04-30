@@ -337,11 +337,11 @@ class models_transients_element_put(object):
                 self.response = self.response + \
                     " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation" % locals(
                     )
-
+                # TODO -Should be reported this in the log ?
                 logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
                 )
                 return None
-            if awl == "released" or awl == "not to be released":
+            if awl == "released":
                 if oldAwl == "queued for atel":
                     sqlQuery = """
                     update pesstoObjects set alertWorkflowLocation = "%(awl)s", snoozed = 0 where transientBucketId = %(transientBucketId)s
@@ -350,12 +350,27 @@ class models_transients_element_put(object):
                     self.response = self.response + \
                         " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation" % locals(
                      )
-
+                    # TODO -Should be reported this in the log ?
                     logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
                     )
                     return None
                 else:
                     raise ValueError("Invalid marshallAlertLocation")
+            if awl == "not to be released":
+                if oldAwl == "released":
+                    raise ValueError("Invalid marshallAlertLocation")
+                else:
+                    sqlQuery = """
+                    update pesstoObjects set alertWorkflowLocation = "%(awl)s", snoozed = 0 where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved to the `%(awl)s` alertWorkflowLocation" % locals(
+                     )
+                    # TODO -Should be reported this in the log ?
+                    logEntry = "moved from '%(oldAwl)s' to '%(awl)s' list by %(username)s" % locals(
+                    )
+                    return None
 
 
 
