@@ -354,7 +354,7 @@ class models_transients_get(base_model):
 
         # grab the remaining data assocatied with the transientBucketIds
         sqlQuery = """
-            select %(selectColumns)s from transientBucket t, transientBucketSummaries s, pesstoObjects p, sherlock_classifications sc where t.replacedByRowId = 0 and t.transientBucketId in (%(matchedTransientBucketIds)s) and t.masterIdFlag = 1 and t.transientBucketId = p.transientBucketId and p.transientBucketId=s.transientBucketId and t.transientBucketId = sc.transient_object_id order by FIELD(t.transientBucketId, %(matchedTransientBucketIds)s)
+            select annotation, %(selectColumns)s from transientBucket t, transientBucketSummaries s, pesstoObjects p, sherlock_classifications sc where t.replacedByRowId = 0 and t.transientBucketId in (%(matchedTransientBucketIds)s) and t.masterIdFlag = 1 and t.transientBucketId = p.transientBucketId and p.transientBucketId=s.transientBucketId and t.transientBucketId = sc.transient_object_id order by FIELD(t.transientBucketId, %(matchedTransientBucketIds)s)
         """ % locals()
         tmpObjectData = readquery(sqlQuery, self.dbConn, self.log)
 
