@@ -273,7 +273,7 @@ class models_transients_get(base_model):
                 sortDirection = "desc"
             if self.qs["sortBy"] == "redshift":
                 sqlQuery = """
-                     select s.transientBucketId from transientBucketSummaries s, pesstoObjects p %(tcsCm)s %(queryWhere)s %(sep)s %(sec)s  order by s.best_redshift %(sortDirection)s
+                     select t.transientBucketId from transientBucketSummaries t, pesstoObjects p %(tcsCm)s %(queryWhere)s %(sep)s %(sec)s  order by t.best_redshift %(sortDirection)s
                 """ % locals()
             elif self.qs["sortBy"] == "latestComment":
                 sqlQuery = """

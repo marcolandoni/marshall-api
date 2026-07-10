@@ -15,6 +15,7 @@ from fundamentals import times
 from marshallEngine.feeders.useradded import data, images
 from astrocalc.times import conversions
 from datetime import datetime, date, time
+import yaml
 
 class models_transients_element_put(object):
     """
@@ -33,7 +34,7 @@ class models_transients_element_put(object):
     ):
         self.log = log
         self.request = request
-        self.transientBucketId = request["elementId"]
+        self.transientBucketId = request["elementId"] if "elementId" in request else None
         self.response = ""
         self.dbConn = db
         # xt-self-arg-tmpx
@@ -74,6 +75,10 @@ class models_transients_element_put(object):
         if "clsType" in self.request:
             self._add_transient_classification()
             self._refresh_sidebar_list_counts()
+            return self.response
+        
+        if "objectDate" in self.request:
+            self._add_new_transient()
             return self.response
 
         # throw warning if nothing has changed
@@ -194,7 +199,7 @@ class models_transients_element_put(object):
             print(mwl)
 
             # VALIDATE THE MOVE
-            if mwl not in ["inbox", "pending observation", "review for followup", "following", "followup complete", "archive"]:
+            if mwl not in ["inbox", "pending observation", "review for followup", "following", "followup complete", "archive" , "unarchive"]:
                 self.response = self.response + \
                     " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is not a valid list<BR>" % locals(
                     )
@@ -671,5 +676,111 @@ class models_transients_element_put(object):
 
         self.log.debug('completed the ``put`` method')
 
+    def _add_new_transient(self):
 
-    # xt-class-method
+
+        self.log.debug('starting the ``_add_new_transient`` method')
+
+        params = dict(list(self.request.items()))
+        from astrocalc.coords import unit_conversion
+        from astrocalc.times import conversions
+
+        converter = unit_conversion(
+            log=self.log
+        )
+        # CONVERTER TO CONVERT MJD TO DATE
+        timeConverter = conversions(
+            log=self.log
+        )
+
+
+        # CONVERT RA AND DEC IF REQUIRED
+        params["objectRa"] = converter.ra_sexegesimal_to_decimal(
+            ra=params["objectRa"]
+        )
+        params["objectDec"] = converter.dec_sexegesimal_to_decimal(
+            dec=params["objectDec"]
+        )
+        try:
+            # GET DATES AND MJD
+            if "-" in str(params["objectDate"]):
+                params["mjd"] = timeConverter.ut_datetime_to_mjd(
+                    utDatetime=params["objectDate"])
+            else:
+                params["mjd"] = float(params["objectDate"])
+                params["objectDate"] = timeConverter.mjd_to_ut_datetime(
+                    mjd=params["mjd"],
+                    sqlDate=True
+                )
+        except Exception as e:
+            self.log.error(f"Error converting object date: {e}")
+            self.response = self.response + f"Error converting object date: {e}"
+            return self.response
+
+        params["ticketAuthor"] = self.request["authenticated_userid"]
+
+
+
+        # add some default null values
+        if "objectRedshift" not in params or len(str(params["objectRedshift"])) == 0:
+            params["objectRedshift"] = "null"
+        if "objectUrl" not in params:
+            params["objectUrl"] = "null"
+        else:
+            params["objectUrl"] = """ '%(objectUrl)s' """ % params
+        if "objectImageStamp" not in params:
+            params["objectImageStamp"] = "null"
+        else:
+            params[
+                "objectImageStamp"] = """ '%(objectImageStamp)s' """ % params
+
+        # now add the new transient to the `fs_user_added` table
+        sqlQuery = u"""
+            INSERT IGNORE INTO fs_user_added
+                (candidateID,
+                    targetImageUrl,
+                    objectURL,
+                    survey,
+                    ra_deg,
+                    dec_deg,
+                    discMag,
+                    mag,
+                    observationMJD,
+                    discDate,
+                    suggestedType,
+                    hostZ,
+                    author,
+                    ingested,
+                    summaryRow,
+                    dateCreated,
+                    dateLastModified) VALUES ('%(objectName)s',%(objectImageStamp)s,%(objectUrl)s,'%(objectSurvey)s','%(objectRa)s','%(objectDec)s','%(objectMagnitude)s','%(objectMagnitude)s','%(mjd)s','%(objectDate)s','SN',%(objectRedshift)s,'%(ticketAuthor)s',0,1,NOW(),NOW())""" % params
+        writequery(
+                log=self.log,
+                sqlQuery=sqlQuery,
+                dbConn=self.dbConn
+            )
+
+        self.dbConn.ping(reconnect=True)
+
+        # IMPORT THE DATA AND IMAGES
+        #LOADING AS DICTIONARY THE YAML FILE
+        with open(os.path.expanduser("~/.config/marshall.yaml"), 'r') as stream:   
+            settings = yaml.safe_load(stream)
+        
+        
+        dbConn = self.dbConn
+        ingester = data(
+            log=self.log,
+            settings=settings,
+            dbConn=dbConn
+        ).ingest(withinLastDays=True)
+
+        cacher = images(
+            log=self.log,
+            settings=settings,
+            dbConn=dbConn
+        ).cache(limit=3000)
+
+
+        self.log.debug('completed the ``_add_new_transient`` method')
+        return None
