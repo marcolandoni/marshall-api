@@ -206,7 +206,25 @@ class models_transients_element_put(object):
                 self.log.debug('completed the ``_create_sqlquery`` method')
                 raise ValueError("Invalid marshallWorkflowLocation")
                 return None
-                
+            
+            # CHECK IF IT IS AN UNARCHIVE MOVE. IN THAT CASE, PUT THE TRANSIENT BACK TO THE UNARCHIVE TO MARSHALL WORKFLOW LOCATION
+            if mwl == "unarchive":
+                if oldMwl == "archive":
+                    sqlQuery = """
+                        update pesstoObjects set marshallWorkflowLocation = unarchiveToMarshallWorkflowLocation where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved back to previous marshallWorkflowLocation<BR>" % locals(
+                        )
+                    return None
+                else:
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s cannot be unarchived as it is not in the `archive` list<BR>" % locals(
+                        )
+                    self.log.debug('completed the ``_create_sqlquery`` method')
+                    raise ValueError("Invalid marshallWorkflowLocation")
+                    return None
             # CHECK THE OLD WORKFLOW LOCATION AND OTHER STUFF NEEDED (AS PI OR CLASSIFICATION) IN ORDER TO MOVE CORRECTLY
 
             if oldMwl == "Inbox":
@@ -219,7 +237,16 @@ class models_transients_element_put(object):
                     self.log.debug('completed the ``_create_sqlquery`` method')
                     raise ValueError("Invalid marshallWorkflowLocation")
                     return None
-            
+                else:
+                    # IF ARCHIVED, WE NEED TO SET TO archive THE marshallWorkflowLocation and store in unarchiveToMarshallWorkflowLocation the current marshallWorkflowLocation
+                    sqlQuery = """
+                        update pesstoObjects set marshallWorkflowLocation = "archive", unarchiveToMarshallWorkflowLocation = "%(oldMwl)s" where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved to the `archive` marshallWorkflowLocation and will be unarchived to the `%(oldMwl)s` list<BR>" % locals(
+                        )
+                    return None
             if oldMwl == "pending observation":
                 # THE POSSIBLE MOVES ARE REVIEW FOR FOLLOWUP OR ARCHIVE. REVIEW FOR FOLLOWUP REQUIRES classifiedFlag = True
                 if mwl == "review for followup":
@@ -236,7 +263,15 @@ class models_transients_element_put(object):
                         raise ValueError("Invalid marshallWorkflowLocation")
                         return None
                 elif mwl == "archive":
-                    pass
+                    # IF ARCHIVED, WE NEED TO SET TO archive THE marshallWorkflowLocation and store in unarchiveToMarshallWorkflowLocation the current marshallWorkflowLocation
+                    sqlQuery = """
+                        update pesstoObjects set marshallWorkflowLocation = "archive", unarchiveToMarshallWorkflowLocation = "%(oldMwl)s" where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved to the `archive` marshallWorkflowLocation and will be unarchived to the `%(oldMwl)s` list<BR>" % locals(
+                        )
+                    return None
                 else:
                     self.response = self.response + \
                         " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `pending observation` list<BR>" % locals(
@@ -261,7 +296,15 @@ class models_transients_element_put(object):
                         raise ValueError("Invalid marshallWorkflowLocation")
                         return None
                 elif mwl == "archive":
-                    pass
+                    # IF ARCHIVED, WE NEED TO SET TO archive THE marshallWorkflowLocation and store in unarchiveToMarshallWorkflowLocation the current marshallWorkflowLocation
+                    sqlQuery = """
+                        update pesstoObjects set marshallWorkflowLocation = "archive", unarchiveToMarshallWorkflowLocation = "%(oldMwl)s" where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved to the `archive` marshallWorkflowLocation and will be unarchived to the `%(oldMwl)s` list<BR>" % locals(
+                        )
+                    return None
                 else:
                     self.response = self.response + \
                         " transientBucketId %(transientBucketId)s cannot be moved to the `%(mwl)s` marshallWorkflowLocation as it is in the `review for followup` list<BR>" % locals(
@@ -288,6 +331,16 @@ class models_transients_element_put(object):
                         )
                     self.log.debug('completed the ``_create_sqlquery`` method')
                     raise ValueError("Invalid marshallWorkflowLocation")
+                    return None
+                else:
+                    # IF ARCHIVED, WE NEED TO SET TO archive THE marshallWorkflowLocation and store in unarchiveToMarshallWorkflowLocation the current marshallWorkflowLocation
+                    sqlQuery = """
+                        update pesstoObjects set marshallWorkflowLocation = "archive", unarchiveToMarshallWorkflowLocation = "%(oldMwl)s" where transientBucketId = %(transientBucketId)s
+                    """ % locals()
+                    writequery(self.log, sqlQuery, self.dbConn)
+                    self.response = self.response + \
+                        " transientBucketId %(transientBucketId)s moved to the `archive` marshallWorkflowLocation and will be unarchived to the `%(oldMwl)s` list<BR>" % locals(
+                        )
                     return None
 
 
