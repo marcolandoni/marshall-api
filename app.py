@@ -423,7 +423,7 @@ def putTransient():
   except Exception as e:
     print(e)
     print(traceback.format_exc())
-    return jsonify({"msg": "Bad Request", "Database Error": str(traceback.format_exc())}), 400
+    return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
 
   raw_payload = request.get_json(silent=True) or {}
   if not isinstance(raw_payload, dict):
@@ -435,7 +435,7 @@ def putTransient():
   try:
     sanitized_payload = _sanitize_put_transient_payload(raw_payload)
   except Exception as ve:
-    return jsonify({"msg": "Bad Request", "Error": str(ve)}), 400
+    return jsonify({"msg": "Bad Request", "err": str(ve)}), 400
   try:
     model = models_transients_element_put(log, sanitized_payload, dbConn)
     response = model.put()

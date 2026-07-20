@@ -836,4 +836,5 @@ class models_transients_element_put(object):
 
 
         self.log.debug('completed the ``_add_new_transient`` method')
-        return None
+        self.response = self.response + 'completed the ``_add_new_transient`` method'
+        return 'completed the ``_add_new_transient`` method'
