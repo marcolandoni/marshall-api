@@ -7,6 +7,8 @@ from flask import request
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import get_jwt_identity, create_access_token, get_jwt
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from flask_cors import CORS
 from datetime import timedelta
@@ -90,6 +92,14 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 
 jwt = JWTManager(app)
 
+# LIMITING THE AMOUNT OF API CALLS
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["100 per day", "10 per hour"],
+    storage_uri="redis://localhost:6379"
+)
 # ADDING CUSTOMIZED ERROR MESSAGES FOR JWT
 
 # Customizing the expired token message
@@ -119,6 +129,7 @@ def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
     return token_in_redis is not None
 
 @app.route("/login", methods=["POST"])
+@limiter.limit("3/second")
 def login():
   try:
     dbConn = database(
@@ -135,6 +146,7 @@ def login():
 
 
 @app.route("/refresh", methods=["POST"])
+@limiter.limit("3/second")
 @jwt_required(refresh=True)
 def refresh():
   try:
@@ -146,6 +158,7 @@ def refresh():
 
 
 @app.route("/logged_user", methods=["GET"])
+@limiter.limit("3/second")
 @jwt_required()
 def logged_user():
     # Access the identity of the current user with get_jwt_identity
@@ -157,7 +170,18 @@ def logged_user():
       return jsonify({"msg": "Bad request", "err":"Bad request"}), 400
 
 
+
+@app.route("/checkAuthentication", methods=["GET"])
+@limiter.limit("3/second")
+@jwt_required()
+def checkAuthentication():
+  try:
+    return jsonify(authenticated=True), 200
+  except Exception as e:
+    return jsonify({"msg": "Bad request", "err":"Bad request"}), 400
+
 @app.route("/logout", methods=["DELETE"])
+@limiter.limit("3/second")
 @jwt_required(verify_type=False)
 def logout():
   try:
@@ -175,6 +199,7 @@ def logout():
 # GENERIC APP ROUTE FOR GETTING TRANSIENTS DATA
 
 @app.route("/getTransients", methods=["POST"])
+@limiter.limit("10/second")
 @jwt_required()
 def getTransients():
   try:
@@ -233,6 +258,7 @@ def getTransients():
 
 # GENERIC APP ROUTE FOR PATCHING TRANSIENTS DATA (POSSIBLY CLASSIFICATION WILL GO UNDER THIS ROUTE)
 @app.route("/patchTransient", methods=["PATCH"])
+@limiter.limit("3/second")
 @jwt_required()
 def patchTransient():
   try:
@@ -263,6 +289,7 @@ def patchTransient():
 
 # CLASSIFY TARGET ROUTE
 @app.route("/classifyTransient", methods=["PATCH"])
+@limiter.limit("3/second")
 @jwt_required()
 def classifyTransient():
   try:
@@ -292,6 +319,7 @@ def classifyTransient():
     return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
 
 @app.route("/putComment", methods=["PUT"])
+@limiter.limit("3/second")
 @jwt_required()
 def putComment():
   try:
@@ -320,7 +348,8 @@ def putComment():
     print(traceback.format_exc())
     return jsonify({"msg": "Bad Request", "err": str(traceback.format_exc())}), 400
 
-@app.route("/countTransients", methods=["POST"])
+@app.route("/countTransients", methods=["POST"])  
+@limiter.limit("10/second")
 @jwt_required()
 def countTransients():
   try:
@@ -380,7 +409,8 @@ def getSingleAsset(tbid):
   return tbid, assets
 
 
-@app.route("/getAssets", methods=["POST"])
+@app.route("/getAssets", methods=["POST"])  
+@limiter.limit("10/second")
 @jwt_required()
 def getAssets():
   try:
@@ -413,6 +443,7 @@ def getAssets():
     }), 400
 
 @app.route("/putTransient", methods=["PUT"])
+@limiter.limit("3/second")
 @jwt_required()
 def putTransient():
   try:

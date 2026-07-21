@@ -1,5 +1,6 @@
 Flask
 flask-jwt-extended
+pip install Flask-Limiter
 passlib
 fundamentals
 pymysql
