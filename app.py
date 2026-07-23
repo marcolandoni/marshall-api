@@ -45,6 +45,12 @@ asset_defs = [
         "assetGroup":"PHOT"
       },
       {
+        "filename": "master_lightcurve_2.png",
+        "assetDescription": "PHOT (secondary)",
+        "format": "png",
+        "assetGroup":"PHOT"
+      },
+      {
         "filename": "ps1_map_color.jpeg",
         "assetDescription": "PS1",
         "format": "jpg",
@@ -59,6 +65,12 @@ asset_defs = [
       {
         "filename": "ps1_target_stamp.jpeg",
         "assetDescription": "PS1 Stamp",
+        "format": "jpeg",
+        "assetGroup":"STAMP"
+      },
+      {
+        "filename": "useradded_target_stamp.jpeg",
+        "assetDescription": "User Added Stamp",
         "format": "jpeg",
         "assetGroup":"STAMP"
       }
